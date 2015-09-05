@@ -1,0 +1,27 @@
+{
+  "name": "halloothween",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "gphoto2": "^0.1.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sescandell/halloothween.git"
+  },
+  "keywords": [
+    "photo",
+    "booth"
+  ],
+  "author": "Stéphane Escandell",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sescandell/halloothween/issues"
+  },
+  "homepage": "https://github.com/sescandell/halloothween"
+}
