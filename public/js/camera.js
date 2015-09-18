@@ -10,7 +10,12 @@
     // connect to the socket
     var socket = io.connect('/socket');
 
+    socket.on('connected', function(){
+        console.log('Connected');
+    });
+
     socket.on('controllerTriggered', function(){
+        console.log('Controller triggered');
         if (undefined != countdown) {
             return;
         }
