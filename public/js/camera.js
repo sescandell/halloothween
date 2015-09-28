@@ -6,6 +6,7 @@
     var $messageContainer = $('.message');
     var $counterContainer = $('.counter');
     var $pictureContainer = $('.photo');
+    var $imageTag = $('img', $pictureContainer);
 
     // connect to the socket
     var socket = io.connect('/socket');
@@ -28,25 +29,35 @@
 
 
         var count = 6;
-        $counterContainer.html(count--);
+        $counterContainer.html(count);
+        $counterContainer.addClass('zoom-start');
 
         $messageContainer.hide();
         $counterContainer.show();
 
         countdown = setInterval(function() {
+            $counterContainer.removeClass('zoom-start');
             if (0==count) {
                 clearInterval(countdown);
                 countdown = undefined;
                 // Envoie de la demande de prise de photo
                 socket.emit('takePicture');
+
+                return;
             }
 
-            $counterContainer.html(count--);
-        }, 1000);
+            // Force rerender
+            setTimeout(function(){
+                count -= 1;
+                $counterContainer.html(count ? count : 'souriez...');
+                $counterContainer.addClass('zoom-start');
+            }, 10);
+        }, 1100);
     });
 
     socket.on('picture', function(path){
         console.log('Image disponible %o', path);
+        $imageTag.prop('src', path);
         $counterContainer.hide();
         $pictureContainer.show();
 

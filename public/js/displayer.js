@@ -28,6 +28,6 @@
             displayedImageIndex = 0;
         }
 
-        $img.prop('src', pictures[displayedImageIndex]+'-'+displayedImageIndex+'-'+Math.random());
+        $img.prop('src', pictures[displayedImageIndex]);
     }, 8000);
 })(jQuery, window);

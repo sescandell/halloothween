@@ -1,0 +1,37 @@
+@font-face {
+    font-family: "wild-wood";
+    src: url('/font/wildwood.ttf');
+}
+
+@keyframes zoom {
+    from {transform: scale(4.0);}
+    to {transform: scale(1.0);}
+}
+
+.page-camera {
+    background: url("/img/background.jpg");
+    background-size: cover;
+}
+
+.page-camera .counter,
+.page-camera .message {
+    font-family: "wild-wood";
+    margin: auto;
+    width: 75%;
+    color: #f00;
+    text-align: center;
+    font-size: 50px;
+    font-size: 65px;
+    margin-top: 320px;
+    text-shadow: 3px 3px 15px #fff;
+}
+
+.page-camera .counter {
+    margin-top: 380px;
+}
+
+.zoom-start {
+    animation-name: zoom;
+    animation-duration: 0.9s;
+}
+
