@@ -13,6 +13,7 @@
 
     socket.on('connected', function(){
         console.log('Connected');
+        $messageContainer.show();
     });
 
     socket.on('controllerTriggered', function(){
@@ -59,13 +60,14 @@
         console.log('Image disponible %o', path);
         $imageTag.prop('src', path);
         $counterContainer.hide();
-        $pictureContainer.show();
+        $pictureContainer.fadeIn();
 
         pictureTimer = setTimeout(function(){
-            $pictureContainer.hide();
-            $messageContainer.show();
+            $pictureContainer.fadeOut(function(){
+                $messageContainer.show();
+            });
 
             pictureTimer = undefined;
-        }, 3000);
+        }, 3500);
     });
 })(jQuery, window);

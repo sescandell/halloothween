@@ -56,6 +56,7 @@ module.exports = function(app,io){
         console.log('storing into ' + __dirname+'/tmp/foo.XXXXXX');
         socket.on('takePicture',function(){
             if (!camera) {
+                nspSocket.emit('picture', '/img/background.jpg');
                 return;
             }
             console.log('Taking picture');
@@ -72,6 +73,7 @@ module.exports = function(app,io){
         socket.on('triggerFired', function(){
             console.log('Trigger fired');
             if (!camera) {
+                socket.broadcast.emit('controllerTriggered');
                 return;
             }
             socket.broadcast.emit('controllerTriggered');

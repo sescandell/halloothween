@@ -15,6 +15,7 @@
 
 .page-camera .counter,
 .page-camera .message {
+    display: none;
     font-family: "wild-wood";
     margin: auto;
     width: 75%;
@@ -29,6 +30,16 @@
 .page-camera .counter {
     margin-top: 380px;
 }
+
+.page-camera .photo{
+    display: none;
+    width: 75%;
+    margin: auto;
+    margin-top: 75px;
+    box-shadow: 0px 0px 20px 10px #656565;
+}
+
+.page-camera .photo img {width:100%;}
 
 .zoom-start {
     animation-name: zoom;
