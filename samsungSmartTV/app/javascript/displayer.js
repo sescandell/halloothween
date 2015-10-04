@@ -11,12 +11,10 @@
     var socket = io.connect('/socket');
 
     socket.on('connected', function(){
-        console.log('Connected');
         socket.emit('loadPhotos');
     });
 
     socket.on('picture', function(path){
-        console.log('Image disponible %o', path);
         pictures.push('/pictures/'+path);
     });
 
