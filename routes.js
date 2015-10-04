@@ -1,13 +1,14 @@
 var InMemoryStore = require('./utils/InMemoryStore');
 var GPhoto = require('gphoto2');
 var fs = require('fs');
+var imageMagick = require('imagemagick');
 
 module.exports = function(app,io){
     var PICTURES_DIR = __dirname + '/public/pictures/';
 
     console.log('Chargement des caméras');
     var camera = undefined;
-    /*
+    //*
     var gphoto = new GPhoto.GPhoto2();
     gphoto.list(function(cameras){
         console.log('Caméras listées');
@@ -45,7 +46,7 @@ module.exports = function(app,io){
         }
 
         for (var i = 0 in files) {
-            picturesStore.add('/pictures/' + files[i]);
+            picturesStore.add(files[i]);
         }
 
         console.log('[INFO] Images chargées : ' + picturesStore.size);
@@ -56,26 +57,32 @@ module.exports = function(app,io){
         console.log('storing into ' + __dirname+'/tmp/foo.XXXXXX');
         socket.on('takePicture',function(){
             if (!camera) {
-                nspSocket.emit('picture', '/img/background.jpg');
                 return;
             }
-            console.log('Taking picture');
+
+            console.log('Taking picture from camera');
             camera.takePicture({
                 targetPath: __dirname+'/tmp/foo.XXXXXX'
             }, function (er, tmpname) {
                 var pictureName = Date.now()+'.jpg';
                 fs.renameSync(tmpname, PICTURES_DIR+pictureName);
-                picturesStore.add('/pictures/' + pictureName);
-                nspSocket.emit('picture', '/pictures/' + pictureName);
+                picturesStore.add(pictureName);
+                console.log('resizing...');
+                imageMagick.resize({
+                    srcPath: PICTURES_DIR+pictureName,
+                    dstPath: PICTURES_DIR+'../thumbnails/'+pictureName,
+                    width: 158
+                }, function(err, stdout, stderr){
+                    if (err) {
+                        throw err;
+                    }
+                    nspSocket.emit('picture', pictureName);
+                });
             });
         });
 
         socket.on('triggerFired', function(){
             console.log('Trigger fired');
-            if (!camera) {
-                socket.broadcast.emit('controllerTriggered');
-                return;
-            }
             socket.broadcast.emit('controllerTriggered');
         });
 

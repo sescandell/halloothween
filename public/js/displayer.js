@@ -16,7 +16,7 @@
 
     socket.on('picture', function(path){
         console.log('Image disponible %o', path);
-        pictures.push(path);
+        pictures.push('/pictures/'+path);
     });
 
     setInterval(function(){

@@ -1,4 +1,6 @@
 ;(function($, window, undefined){
+    var COUNTDOWN_TIME = 5;
+
     var countdown = undefined;
     var pictureTimer = undefined;
 
@@ -29,7 +31,7 @@
         }
 
 
-        var count = 6;
+        var count = COUNTDOWN_TIME;
         $counterContainer.html(count);
         $counterContainer.addClass('zoom-start');
 
@@ -58,7 +60,7 @@
 
     socket.on('picture', function(path){
         console.log('Image disponible %o', path);
-        $imageTag.prop('src', path);
+        $imageTag.prop('src', '/pictures/'+path);
         $counterContainer.hide();
         $pictureContainer.fadeIn();
 

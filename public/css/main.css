@@ -2,17 +2,21 @@
     font-family: "wild-wood";
     src: url('/font/wildwood.ttf');
 }
-
 @keyframes zoom {
     from {transform: scale(4.0);}
     to {transform: scale(1.0);}
 }
-
+body{
+    padding: 0;
+    margin: 0;
+}
+/******************************************
+ * PAGE CAMERA
+ */
 .page-camera {
     background: url("/img/background.jpg");
     background-size: cover;
 }
-
 .page-camera .counter,
 .page-camera .message {
     display: none;
@@ -26,11 +30,9 @@
     margin-top: 320px;
     text-shadow: 3px 3px 15px #fff;
 }
-
 .page-camera .counter {
     margin-top: 380px;
 }
-
 .page-camera .photo{
     display: none;
     width: 75%;
@@ -38,11 +40,69 @@
     margin-top: 75px;
     box-shadow: 0px 0px 20px 10px #656565;
 }
-
 .page-camera .photo img {width:100%;}
-
 .zoom-start {
     animation-name: zoom;
     animation-duration: 0.9s;
 }
 
+/******************************************
+ * PAGE CONTROLEUR
+ */
+.page-controller {
+    background: url("/img/controller.png");
+    background-size: cover;
+}
+.page-controller .container{
+    position: absolute;
+    top: 290px;
+    left: 607px;
+    width: 92px;
+    height: 200px;
+}
+.page-controller .trigger{
+    opacity: 0.01;
+    margin: 0;
+    padding: 0;
+    border: none;
+    width: 100%;
+    height: 100%;
+}
+.page-controller .photos{
+    width: 52%;
+    margin: auto;
+    white-space: nowrap;
+    overflow-x: scroll;
+    padding: 0;
+    bottom: 60px;
+    position: absolute;
+    left: 368px;
+}
+.page-controller .photos li{
+    display: inline-block;
+}
+.page-controller .photos li+li{
+    margin-left: 10px;
+}
+.page-controller .photos img{
+    width: 158px;
+}
+.page-controller .overlay{
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    background-color: rgba(0,0,0,0.6);
+    display:none;
+}
+.page-controller .popin{
+    width:75%;
+    margin:auto;
+    position: relative;
+    top: 20px;
+}
+.page-controller .popin img{
+    width: 100%;
+}
+.page-controller.popin-shown .overlay{display:block}
