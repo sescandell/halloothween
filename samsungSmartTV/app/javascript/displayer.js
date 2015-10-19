@@ -1,4 +1,5 @@
 ;(function($, window, undefined){
+    alert('[HALLOOTHWEEN] Initialisation');
     var DISPLAY_TIME = 6000; // ms
     // Cache DOM
     var $container = $('.container');
@@ -8,13 +9,16 @@
     var pictures = [];
 
     // connect to the socket
-    var socket = io.connect('/socket');
+    alert(window);
+    var socket = io.connect('http://192.168.0.19/socket');
 
     socket.on('connected', function(){
+        alert('[HALLOOTHWEEN] Connecté.');
         socket.emit('loadPhotos');
     });
 
     socket.on('picture', function(path){
+        alert('[HALLOOTHWEEN] Image ' + path);
         pictures.push('/pictures/'+path);
     });
 
@@ -31,17 +35,24 @@
             pictureToDisplay = displayedImageIndex;
         }
 
+        alert('[HALLOOTHWEEN] Chargement de ' + pictures[pictureToDisplay]);
+
         return pictures[pictureToDisplay];
     }
 
+    alert('[HALLOOTHWEEN] Mise en place timer');
     setInterval(function(){
+        alert('[HALLOOTHWEEN] Tick');
         if (!pictures.length) {
             return;
         }
 
         $container.fadeOut(function(){
-            $img.prop('src', getNextPicture());
+            $img.prop('src', 'http://192.168.0.19' + getNextPicture());
             $container.fadeIn(800);
         });
     }, DISPLAY_TIME);
+    alert('[HALLOOTHWEEN] Fait');
 })(jQuery, window);
+
+alert('[HALLOOTHWEEN] En avant !!');

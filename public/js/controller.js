@@ -37,5 +37,9 @@
 
     $('.popin img, .overlay').click(function(){
         $body.removeClass('popin-shown');
-    })
+    });
+
+    socket.on('cry', function(){
+        console.log('Here I am');
+    });
 })(jQuery, window);

@@ -41,7 +41,7 @@
             return;
         }
 
-        $container.fadeOut(function(){
+        $container.fadeOut(400, function(){
             $img.prop('src', getNextPicture());
             $container.fadeIn(800);
         });

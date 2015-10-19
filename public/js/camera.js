@@ -72,4 +72,12 @@
             pictureTimer = undefined;
         }, 3500);
     });
+
+    socket.on('cry', function(){
+        console.log('Here I am');
+    });
+
+    window.cry = function() {
+        socket.emit('cry');
+    }
 })(jQuery, window);

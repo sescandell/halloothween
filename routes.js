@@ -8,7 +8,9 @@ module.exports = function(app,io){
 
     console.log('Chargement des caméras');
     var camera = undefined;
-    //*
+    // Storage in-memory des photos précédentes
+    var picturesStore = new InMemoryStore(100);
+    /*
     var gphoto = new GPhoto.GPhoto2();
     gphoto.list(function(cameras){
         console.log('Caméras listées');
@@ -36,8 +38,9 @@ module.exports = function(app,io){
         res.render('displayer');
     });
 
-    // Storage in-memory des photos précédentes
-    var picturesStore = new InMemoryStore(100);
+    app.get('/loadPictures', function(req, res) {
+        res.json(picturesStore.items);
+    });
 
     fs.readdir(PICTURES_DIR, function(err, files){
         if (err) {
@@ -46,6 +49,9 @@ module.exports = function(app,io){
         }
 
         for (var i = 0 in files) {
+            if ('.' == files[i][0]) {
+                continue;
+            }
             picturesStore.add(files[i]);
         }
 
@@ -92,6 +98,14 @@ module.exports = function(app,io){
             }
         });
 
+        socket.on('cry', function(){
+            console.log('Please, everybody cry...');
+            nspSocket.emit('cry');
+        });
+
+        nspSocket.emit('cry');
+
+        console.log('Envoi message "connected"');
         socket.emit('connected');
     });
 };
