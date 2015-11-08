@@ -10,7 +10,7 @@ module.exports = function(app,io){
     var camera = undefined;
     // Storage in-memory des photos précédentes
     var picturesStore = new InMemoryStore(100);
-    /*
+    //*
     var gphoto = new GPhoto.GPhoto2();
     gphoto.list(function(cameras){
         console.log('Caméras listées');
