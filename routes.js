@@ -11,6 +11,7 @@ module.exports = function(app,io){
     // Storage in-memory des photos précédentes
     var picturesStore = new InMemoryStore(100);
     //*
+    // killall  PTPCamera
     var gphoto = new GPhoto.GPhoto2();
     gphoto.list(function(cameras){
         console.log('Caméras listées');
