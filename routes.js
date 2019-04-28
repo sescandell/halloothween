@@ -2,13 +2,11 @@ var InMemoryStore = require('./utils/InMemoryStore');
 var GPhoto = require('gphoto2');
 var fs = require('fs');
 var imageMagick = require('imagemagick');
-
+var PICTURES_DIR = __dirname + '/public/pictures/';
 
 module.exports = function(app,io){
-    var PICTURES_DIR = __dirname + '/public/pictures/';
     
-
-    console.log('Chargement des caméras');
+    console.info('Chargement des caméras');
     var camera = undefined;
     // Storage in-memory des photos précédentes
     var picturesStore = new InMemoryStore(100);
@@ -21,7 +19,7 @@ module.exports = function(app,io){
         }
 
         camera = cameras[0];
-        console.log('Caméra initialisée : %s', camera.model);
+        console.info('Caméra initialisée : %s', camera.model);
     });
     // */
 
@@ -62,23 +60,23 @@ module.exports = function(app,io){
             picturesStore.add(files[i]);
         }
 
-        console.log('[INFO] Images chargées : ' + picturesStore.size);
+        console.info('[INFO] Images chargées : ' + picturesStore.size);
     });
 
     // Initialize a new socket.io application
     var nspSocket = io.of('/socket').on('connection', function (socket) {
-        console.log('storing into ' + __dirname+'/tmp/foo.XXXXXX');
         socket.on('takePicture',function(){
             if (!camera) {
                 return;
             }
 
-            console.log('Taking picture from camera');
+            console.info('Taking picture from camera');
             camera.takePicture({
                 download: true
             }, function (er, pictureData) {
                 if (er) {
-                    console.log(er);
+                    console.error('Erreur prise de photo : %o', er);
+
                     return;
                 }
 
@@ -86,14 +84,15 @@ module.exports = function(app,io){
                 try {
                     fs.writeFileSync(PICTURES_DIR+pictureName, pictureData);
                 } catch(e) {
-                    console.log("Erreur save photo => " + e);
-                    console.log(PICTURES_DIR+pictureName);
+                    console.error("Erreur save photo => " + e);
+                    console.error(PICTURES_DIR+pictureName);
+
                     return;
                 }
                 
                 picturesStore.add(pictureName);
                 //*
-                console.log('resizing...');
+                console.info('Redimensionnement en cours ...');
                 try{
                     imageMagick.resize({
                         srcPath: PICTURES_DIR+pictureName,
@@ -101,27 +100,27 @@ module.exports = function(app,io){
                         width: 158
                     }, function(err, stdout, stderr){
                         if (err) {
-                            console.log(
+                            console.error(
                                 'Error resizing file %s to %s',
                                 PICTURES_DIR+pictureName,
                                 PICTURES_DIR+'../thumbnails/'+pictureName
                             );
-                            console.log("\t%o", err);
+                            console.error("\t%o", err);
 
                             return;
                         }
-                        console.log('done');
+                        console.info('Fait !');
                         nspSocket.emit('picture', pictureName);
                     });
                 } catch(e) {
-                    console.log('error %o', e);
+                    console.error('Erreur %o', e);
                 }
                 // */
             });
         });
 
         socket.on('triggerFired', function(){
-            console.log('Trigger fired');
+            console.info('Trigger fired');
             socket.broadcast.emit('controllerTriggered');
         });
 
@@ -132,12 +131,12 @@ module.exports = function(app,io){
         });
 
         socket.on('cry', function(){
-            console.log('Please, everybody cry...');
+            console.info('Please, everybody cry...');
             nspSocket.emit('cry');
         });
 
         socket.on('triggerAlarm', function(p) {
-            console.log('TriggerAlarm received with params %o', p);
+            console.info('TriggerAlarm received with params %o', p);
             socket.broadcast.emit('alarm', p);
         });
 
@@ -147,7 +146,7 @@ module.exports = function(app,io){
 
         nspSocket.emit('cry');
 
-        console.log('Envoi message "connected"');
+        console.info('Envoi message "connected"');
         socket.emit('connected');
     });
 };
