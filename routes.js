@@ -3,8 +3,10 @@ var GPhoto = require('gphoto2');
 var fs = require('fs');
 var imageMagick = require('imagemagick');
 
+
 module.exports = function(app,io){
     var PICTURES_DIR = __dirname + '/public/pictures/';
+    
 
     console.log('Chargement des caméras');
     var camera = undefined;
@@ -14,13 +16,12 @@ module.exports = function(app,io){
     // killall  PTPCamera
     var gphoto = new GPhoto.GPhoto2();
     gphoto.list(function(cameras){
-        console.log('Caméras listées');
         if (!cameras.length) {
             throw 'Aucune caméra trouvée. Bye!';
         }
 
-        console.log('Caméra initialisée');
         camera = cameras[0];
+        console.log('Caméra initialisée : %s', camera.model);
     });
     // */
 
@@ -37,6 +38,11 @@ module.exports = function(app,io){
     app.get('/displayer', function(req,res){
         // Affichage
         res.render('displayer');
+    });
+
+    app.get('/manager', function(req,res){
+        // Affichage
+        res.render('manager');
     });
 
     app.get('/loadPictures', function(req, res) {
@@ -69,22 +75,48 @@ module.exports = function(app,io){
 
             console.log('Taking picture from camera');
             camera.takePicture({
-                targetPath: __dirname+'/tmp/foo.XXXXXX'
-            }, function (er, tmpname) {
+                download: true
+            }, function (er, pictureData) {
+                if (er) {
+                    console.log(er);
+                    return;
+                }
+
                 var pictureName = Date.now()+'.jpg';
-                fs.renameSync(tmpname, PICTURES_DIR+pictureName);
+                try {
+                    fs.writeFileSync(PICTURES_DIR+pictureName, pictureData);
+                } catch(e) {
+                    console.log("Erreur save photo => " + e);
+                    console.log(PICTURES_DIR+pictureName);
+                    return;
+                }
+                
                 picturesStore.add(pictureName);
+                //*
                 console.log('resizing...');
-                imageMagick.resize({
-                    srcPath: PICTURES_DIR+pictureName,
-                    dstPath: PICTURES_DIR+'../thumbnails/'+pictureName,
-                    width: 158
-                }, function(err, stdout, stderr){
-                    if (err) {
-                        throw err;
-                    }
-                    nspSocket.emit('picture', pictureName);
-                });
+                try{
+                    imageMagick.resize({
+                        srcPath: PICTURES_DIR+pictureName,
+                        dstPath: PICTURES_DIR+'../thumbnails/'+pictureName,
+                        width: 158
+                    }, function(err, stdout, stderr){
+                        if (err) {
+                            console.log(
+                                'Error resizing file %s to %s',
+                                PICTURES_DIR+pictureName,
+                                PICTURES_DIR+'../thumbnails/'+pictureName
+                            );
+                            console.log("\t%o", err);
+
+                            return;
+                        }
+                        console.log('done');
+                        nspSocket.emit('picture', pictureName);
+                    });
+                } catch(e) {
+                    console.log('error %o', e);
+                }
+                // */
             });
         });
 
@@ -102,6 +134,15 @@ module.exports = function(app,io){
         socket.on('cry', function(){
             console.log('Please, everybody cry...');
             nspSocket.emit('cry');
+        });
+
+        socket.on('triggerAlarm', function(p) {
+            console.log('TriggerAlarm received with params %o', p);
+            socket.broadcast.emit('alarm', p);
+        });
+
+        socket.on('brigthness', function(v){
+            socket.broadcast.emit('brigthness', v);
         });
 
         nspSocket.emit('cry');
