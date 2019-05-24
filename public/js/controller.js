@@ -19,7 +19,18 @@
         e.preventDefault();
     });
 
-    socket.on('picture', function(path){
+    socket.on('picture-thumbnail', function(path){
+        console.log('Image disponible %o', path);
+        $('<li />')
+            .append(
+                $('<img />')
+                    .prop('src', '/thumbnails/'+path)
+                    .data('path', path)
+            )
+            .prependTo($photos);
+    });
+
+    socket.on('gallery', function(path){
         console.log('Image disponible %o', path);
         $('<li />')
             .append(
@@ -31,7 +42,7 @@
     });
 
     $photos.on('click', 'img', function(){
-        $popinImg.prop('src', '/pictures/'+$(this).data('path'));
+        $popinImg.prop('src', '/display/'+$(this).data('path'));
         $body.addClass('popin-shown');
     });
 

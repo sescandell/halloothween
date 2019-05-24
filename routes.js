@@ -28,6 +28,10 @@ module.exports = function(app,io){
         res.render('camera');
     });
 
+    app.get('/all-in-one', function (req, res){
+        res.render('all-in-one');
+    });
+
     app.get('/controller', function(req,res){
         // Bouton de lancement
         res.render('controller');
@@ -91,8 +95,9 @@ module.exports = function(app,io){
                 }
                 
                 picturesStore.add(pictureName);
+                nspSocket.emit('picture', pictureName);
                 //*
-                console.info('Redimensionnement en cours ...');
+                console.info('Redimensionnements en cours ...');
                 try{
                     imageMagick.resize({
                         srcPath: PICTURES_DIR+pictureName,
@@ -109,8 +114,26 @@ module.exports = function(app,io){
 
                             return;
                         }
-                        console.info('Fait !');
-                        nspSocket.emit('picture', pictureName);
+                        console.info("\tThumbnail fait !");
+                        nspSocket.emit('picture-thumbnail', pictureName);
+                    });
+                    imageMagick.resize({
+                        srcPath: PICTURES_DIR+pictureName,
+                        dstPath: PICTURES_DIR+'../display/'+pictureName,
+                        width: 1024
+                    }, function(err, stdout, stderr){
+                        if (err) {
+                            console.error(
+                                'Error resizing display file %s to %s',
+                                PICTURES_DIR+pictureName,
+                                PICTURES_DIR+'../display/'+pictureName
+                            );
+                            console.error("\t%o", err);
+
+                            return;
+                        }
+                        console.info("\tDisplay fait !");
+                        nspSocket.emit('picture-display', pictureName);
                     });
                 } catch(e) {
                     console.error('Erreur %o', e);
@@ -126,7 +149,7 @@ module.exports = function(app,io){
 
         socket.on('loadPhotos', function(){
             for (var index = 0; index < picturesStore.size; index++) {
-                socket.emit('picture', picturesStore.get(index));
+                socket.emit('gallery', picturesStore.get(index));
             }
         });
 

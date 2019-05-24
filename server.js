@@ -3,7 +3,7 @@ var app = require('express')();
 app.use(cors());
 
 // Required for taking into account Azure Cloud Environment
-var port = process.env.PORT || 80;
+var port = process.env.PORT || 8181;
 
 
 // Initialize a new socket.io object. It is bound to 

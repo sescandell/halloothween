@@ -25,9 +25,9 @@
         startTimer();
     });
 
-    socket.on('picture', function(path){
+    socket.on('picture-display', function(path){
         console.log('Image disponible %o', path);
-        pictures.push('/pictures/'+path);
+        pictures.push('/display/'+path);
     });
 
     socket.on('alarm', function(p){
