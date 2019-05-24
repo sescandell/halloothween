@@ -56,8 +56,7 @@ body{
     display: block;
 }
 .zoom-start {
-    animation-name: zoom;
-    animation-duration: 0.9s;
+    animation: 1s zoom;
 }
 
 /******************************************
@@ -123,12 +122,15 @@ body{
     padding: 0;
     background-color: rgba(0,0,0,0.6);
     display:none;
+    top:0;
+    left:0;
 }
 .page-controller .popin{
     width:75%;
     margin:auto;
     position: relative;
-    top: 20px;
+    top: 40px;
+    background: #656565;
     box-shadow: 0px 0px 20px 10px #656565;
 }
 .page-controller .popin img{

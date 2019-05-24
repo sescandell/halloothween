@@ -29,29 +29,37 @@
         $counter.show();
 
         countdown = setInterval(function() {
-            $counter.removeClass('zoom-start');
             if (0==count) {
                 // Envoie de la demande de prise de photo
                 socket.emit('takePicture');
-                
+
+                $counter.removeClass('zoom-start');
                 clearInterval(countdown);
                 countdown = undefined;
 
                 return;
             }
 
-            // Force rerender
-            setTimeout(function(){
-                count -= 1;
-                $counter.html(count ? count : 'souriez...');
-                $counter.addClass('zoom-start');
-            }, 10);
-        }, 1100);
+            count -= 1;
+            $counter.html(count ? count : 'souriez...');
+        }, 1000);
     });
 
     socket.on('connected', function(){
         console.log('Connected');
         socket.emit('loadPhotos');
+    });
+
+    socket.on('picture', function(path){
+        $popinImg.prop('src', '/pictures/'+path);
+        $body.addClass('popin-shown');
+        $counter.hide();
+
+        setTimeout(function(){
+            $body.removeClass('popin-shown');
+            $popinImg.prop('src', '');
+            $trigger.show();
+        }, 8000);
     });
 
     socket.on('picture-thumbnail', function(path){
