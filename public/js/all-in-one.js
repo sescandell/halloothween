@@ -31,10 +31,11 @@
         countdown = setInterval(function() {
             $counter.removeClass('zoom-start');
             if (0==count) {
-                clearInterval(countdown);
-                countdown = undefined;
                 // Envoie de la demande de prise de photo
                 socket.emit('takePicture');
+                
+                clearInterval(countdown);
+                countdown = undefined;
 
                 return;
             }

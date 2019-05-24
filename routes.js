@@ -10,7 +10,7 @@ module.exports = function(app,io){
     var camera = undefined;
     // Storage in-memory des photos précédentes
     var picturesStore = new InMemoryStore(100);
-    /*
+    //*
     // killall  PTPCamera
     var gphoto = new GPhoto.GPhoto2();
     gphoto.list(function(cameras){
@@ -70,6 +70,7 @@ module.exports = function(app,io){
     // Initialize a new socket.io application
     var nspSocket = io.of('/socket').on('connection', function (socket) {
         socket.on('takePicture',function(){
+            console.info('Taking picture from camera');
             if (!camera) {
                 return;
             }
