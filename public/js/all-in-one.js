@@ -3,7 +3,7 @@
 
     var countdown = undefined;
     var pictureTimer = undefined;
-    
+
     // Mise en cache des éléments du DOM
     var $photos = $('.photos');
     var $trigger = $('.trigger');
@@ -69,5 +69,19 @@
             console.error("Erreur récupération flux vidéo");
         });
 
-        // setInterval(function() {$video.toggle();}, 5000);
+    $('.fullscreen').on('click', function(){
+        var el = document.documentElement;
+        if (el.requestFullscreen) {
+            el.requestFullscreen();
+        } else if (el.msRequestFullscreen) {
+            el.msRequestFullscreen();
+        }else if (el.mozRequestFullScreen) {
+            el.mozRequestFullScreen();
+        }else if (el.webkitRequestFullscreen) {
+            el.webkitRequestFullscreen();
+        }
+        $(this).hide();
+        
+        return false;
+    })
 })(jQuery, window);

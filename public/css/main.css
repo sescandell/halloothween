@@ -68,6 +68,7 @@ body{
     /* background: url("/img/photo-007.jpg"); */
     /*background: url("/img/emilie_controller.jpg");*/
     background: url("/img/theatre.jpg");
+    padding: 10px;
     /* background-size: cover; */
 }
 
@@ -96,7 +97,7 @@ body{
     white-space: nowrap;
     overflow-x: scroll;
     padding: 0;
-    bottom: 60px;
+    bottom: 10px;
     position: absolute;
     left: 12.5%;
 }
@@ -193,10 +194,11 @@ body{
  * PAGE ALL IN ONE
  */
  .page-controller .preview {
-     width: 640px;
+     width: 620px;
      margin: auto;
  }
  .page-controller video {
+    width: 100%;
     transform: rotateY(180deg);
 }
 
