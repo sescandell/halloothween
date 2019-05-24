@@ -10,12 +10,42 @@
     var $popinImg = $('.popin img');
     var $body = $('body');
     var $video=$('video');
+    var $counter = $('.counter');
     var socket = io.connect('/socket');
 
     $trigger.on('click', function(e){
+        e.preventDefault();
+        if (undefined != countdown) {
+            return;
+        }
+
         console.log('Click');
         socket.emit('triggerFired');
-        e.preventDefault();
+        $trigger.hide();
+
+        var count = COUNTDOWN_TIME;
+        $counter.html(count);
+        $counter.addClass('zoom-start');
+        $counter.show();
+
+        countdown = setInterval(function() {
+            $counter.removeClass('zoom-start');
+            if (0==count) {
+                clearInterval(countdown);
+                countdown = undefined;
+                // Envoie de la demande de prise de photo
+                socket.emit('takePicture');
+
+                return;
+            }
+
+            // Force rerender
+            setTimeout(function(){
+                count -= 1;
+                $$counter.html(count ? count : 'souriez...');
+                $counter.addClass('zoom-start');
+            }, 10);
+        }, 1100);
     });
 
     socket.on('connected', function(){
@@ -81,7 +111,7 @@
             el.webkitRequestFullscreen();
         }
         $(this).hide();
-        
+
         return false;
     })
 })(jQuery, window);
