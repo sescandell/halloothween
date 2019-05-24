@@ -193,7 +193,8 @@ body{
  * PAGE ALL IN ONE
  */
  .page-controller .preview {
-     display: none;
+     width: 640px;
+     margin: auto;
  }
  .page-controller video {
     transform: rotateY(180deg);

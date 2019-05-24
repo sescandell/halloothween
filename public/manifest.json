@@ -1,0 +1,6 @@
+{
+    "name": "Photobooth",
+    "short_name": "Photobooth",
+    "start_url": "/all-in-one",
+    "display": "standalone"
+}
