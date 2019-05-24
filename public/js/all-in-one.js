@@ -42,7 +42,7 @@
             // Force rerender
             setTimeout(function(){
                 count -= 1;
-                $$counter.html(count ? count : 'souriez...');
+                $counter.html(count ? count : 'souriez...');
                 $counter.addClass('zoom-start');
             }, 10);
         }, 1100);

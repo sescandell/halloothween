@@ -92,6 +92,7 @@ body{
     width: 80%;
     height: 90%;
     margin-left: 10%;
+    text-shadow: 3px 3px 15px #fff;
 }
 .page-controller button:focus {outline:0;}
 .page-controller .photos{
@@ -205,3 +206,15 @@ body{
     transform: rotateY(180deg);
 }
 
+.page-controller .counter {
+    display: none;
+    font-family: sans-serif;
+    font-weight: bolder;
+    margin: auto;
+    width: 60%;
+    color: #f00;
+    text-align: center;
+    font-size: 65px;
+    margin-top: 90px;
+    text-shadow: 3px 3px 15px #fff;
+}
