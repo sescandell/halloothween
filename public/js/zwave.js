@@ -11,9 +11,19 @@
         socket.emit('zwaveStart');
     });
 
+    var timer = undefined;
     $('.trigger-level').on('input', function(){
-        console.log('change %o', this.value);
-        socket.emit('zwaveSetLevel', parseInt(this.value, 10));
+        if (undefined != timer) {
+            clearTimeout(timer);
+        }
+
+        var level = this.value;
+        timer = setTimeout(function() {
+            console.log('Envoi nouveau level %d', level);
+            timer = undefined;
+
+            socket.emit('zwaveSetLevel', parseInt(level, 10));
+        }, 1000);
     })
 
     socket.on('cry', function(){
