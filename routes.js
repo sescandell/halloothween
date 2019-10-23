@@ -45,7 +45,7 @@ function setLevel(level) {
     zwave.setValue({node_id: NODE_ID_STRIP_CONTROLLER, class_id: 38, instance: 1, index: 0}, level);
 }
 
-var lastColor = '#FF0000FF';
+var lastColor = '#FF0000';
 function setColor(c) {
     lastColor = c;
 
@@ -93,11 +93,6 @@ module.exports = function(app,io){
     app.get('/manager', function(req,res){
         // Scènes
         res.render('manager');
-    });
-
-    app.get('/zwave', function(req,res){
-        // Contrôleur zWave
-        res.render('zwave');
     });
 
     app.get('/loadPictures', function(req, res) {
@@ -219,7 +214,7 @@ module.exports = function(app,io){
             if (zwaveStarted) {
                 var previousLevel = lastLevel;
                 var previousColor = lastColor;
-                setColor('#FF0000FF');
+                setColor('#FF0000');
                 setTimeout(function(){
                     setColor(previousColor);
                     setLevel(previousLevel);
