@@ -162,7 +162,8 @@ body{
 }
 
 .page-displayer img.alarm {
-    animation: alarmMove 3s cubic-bezier(.36,.07,.19,.97) both infinite;
+    /*animation: shake 3s cubic-bezier(.36,.07,.19,.97) both infinite;*/
+    animation: alarmMove 3s both infinite;
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
     perspective: 1000px;
@@ -174,7 +175,7 @@ body{
     }
 
     100% {
-        transform: scale(1.2);
+        transform: scale(1.1);
     }
 }
 
