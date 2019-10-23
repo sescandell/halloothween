@@ -218,7 +218,7 @@ module.exports = function(app,io){
                 return;
             }
             console.log('Définition de la couleur à %s', c);
-            zwave.setValue({nodeId: NODE_ID_STRIP_CONTROLLER, class_id: 51, instance: 1, index: 0}, c);
+            zwave.setValue({node_id: NODE_ID_STRIP_CONTROLLER, class_id: 51, instance: 1, index: 0}, c);
         });
         socket.on('zwaveSetLevel', function(l) {
             if (!stripControllerReady) {
