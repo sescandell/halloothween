@@ -218,7 +218,7 @@ module.exports = function(app,io){
                 setTimeout(function(){
                     setColor(previousColor);
                     setLevel(previousLevel);
-                }, 20000)
+                }, 22000)
             }
         });
         // Vitesse de rotation du Girophare
