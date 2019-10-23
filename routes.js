@@ -38,6 +38,20 @@ zwave.on('node ready', function(nodeId) {
     }
 });
 
+var lastLevel = 99;
+function setLevel(level) {
+    lastLevel = level;
+
+    zwave.setValue({node_id: NODE_ID_STRIP_CONTROLLER, class_id: 38, instance: 1, index: 0}, level);
+}
+
+var lastColor = '#FF0000FF';
+function setColor(c) {
+    lastColor = c;
+
+    zwave.setValue({node_id: NODE_ID_STRIP_CONTROLLER, class_id: 51, instance: 1, index: 0}, c);
+}
+
 module.exports = function(app,io){
     
     console.info('Chargement des caméras');
@@ -201,6 +215,16 @@ module.exports = function(app,io){
         socket.on('triggerAlarm', function(p) {
             console.info('TriggerAlarm received with params %o', p);
             socket.broadcast.emit('alarm', p);
+
+            if (zwaveStarted) {
+                var previousLevel = lastLevel;
+                var previousColor = lastColor;
+                setColor('#FF0000FF');
+                setTimeout(function(){
+                    setColor(previousColor);
+                    setLevel(previousLevel);
+                }, 20000)
+            }
         });
         // Vitesse de rotation du Girophare
         socket.on('speed', function(v){
@@ -218,14 +242,16 @@ module.exports = function(app,io){
                 return;
             }
             console.log('Définition de la couleur à %s', c);
-            zwave.setValue({node_id: NODE_ID_STRIP_CONTROLLER, class_id: 51, instance: 1, index: 0}, c);
+            setColor(c);
+            setLevel(lastLevel);
         });
+        
         socket.on('zwaveSetLevel', function(l) {
             if (!stripControllerReady) {
                 return;
             }
             console.log('Définition du level à %d', l);
-            zwave.setValue({node_id: NODE_ID_STRIP_CONTROLLER, class_id: 38, instance: 1, index: 0}, l);
+            setLevel(l);
         });
 
         nspSocket.emit('cry');

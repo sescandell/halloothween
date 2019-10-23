@@ -198,17 +198,6 @@ body{
 }
 
 /******************************************
- * PAGE ZWAVE
- */
- .page-zwave {
-    padding: 20px;
-    font-size: 2em;
-}
-.page-zwave li {
-    margin: 30px 0;
-}
-
-/******************************************
  * PAGE ALL IN ONE
  */
  .page-controller .preview {

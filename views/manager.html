@@ -7,6 +7,7 @@
 </head>
 <body class="page-manager">
     <div class="container">
+        <h4>Girophare</h4>
         <p><input type="range" class= "trigger-speed" min="0" max="255" value="255" step="1" /></p>
         <ul>
             <li class="trigger" data-name="Alarm" data-param="000">Alarme 0</li>
@@ -17,7 +18,19 @@
             <li class="trigger" data-name="Alarm" data-param="005">Alarme 5</li>
             <li class="trigger" data-name="Alarm" data-param="006">Alarme 6</li>
         </ul>
-        
+        <hr/>
+        <h4>zWave</h4>
+        <p>
+            <a class="start" href='#'>Démarre</a>
+        </p>
+        <p>
+            <label>Level</label>
+            <input type="range" class= "trigger-level" min="0" max="99" value="0" step="1" />
+        </p>
+        <p>
+            <label>Couleur</label>
+            <input type="color" class= "color" value="#0000FF" />
+        </p>
     </div>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
