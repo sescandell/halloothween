@@ -6,10 +6,9 @@
         console.log('Connected');
     });
 
-    $('.trigger').on('click', function(e){
+    $('.start').on('click', function(e){
         e.preventDefault();
-        var $elt = $(this);
-        socket.emit('trigger' + $elt.data('name'), $elt.data('param'));
+        socket.emit('zwaveStart');
     });
 
     $('.trigger-level').on('input', function(){
