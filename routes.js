@@ -225,7 +225,7 @@ module.exports = function(app,io){
                 return;
             }
             console.log('Définition du level à %d', l);
-            zwave.setValue({nodeId: NODE_ID_STRIP_CONTROLLER, class_id: 38, instance: 1, index: 0}, l);
+            zwave.setValue({node_id: NODE_ID_STRIP_CONTROLLER, class_id: 38, instance: 1, index: 0}, l);
         });
 
         nspSocket.emit('cry');
