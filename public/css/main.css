@@ -170,11 +170,10 @@ body{
 }
 
 @keyframes alarmMove {
-    0% {
+    0%, 100% {
         transform: scale(1);
     }
-
-    100% {
+    50% {
         transform: scale(1.1);
     }
 }
