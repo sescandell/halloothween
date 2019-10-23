@@ -34,7 +34,7 @@
             timerLevel = undefined;
 
             socket.emit('zwaveSetLevel', parseInt(level, 10));
-        }, 1000);
+        }, 300);
     });
 
     var timerColor = undefined;
@@ -49,7 +49,7 @@
             timerColor = undefined;
 
             socket.emit('zwaveSetColor', color);
-        }, 1000);
+        }, 300);
     });
 
     socket.on('cry', function(){
