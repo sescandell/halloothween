@@ -12,9 +12,9 @@
         socket.emit('trigger' + $elt.data('name'), $elt.data('param'));
     });
 
-    $('.trigger-speed').on('input', function(){
+    $('.trigger-level').on('input', function(){
         console.log('change %o', this.value);
-        socket.emit('speed', this.value);
+        socket.emit('zwaveSetLevel', parseInt(this.value, 10));
     })
 
     socket.on('cry', function(){

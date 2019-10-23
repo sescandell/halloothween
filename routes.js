@@ -3,6 +3,40 @@ var GPhoto = require('gphoto2');
 var fs = require('fs');
 var imageMagick = require('imagemagick');
 var PICTURES_DIR = __dirname + '/public/pictures/';
+var OZW = require('openzwave-shared');
+var zwave = new OZW({
+    ConsoleOutput: false,
+    Logging: false,
+    SaveConfiguration: false,
+    DriverMaxAttempts: 3,
+    PollInterval: 500,
+    SuppressValueRefresh: false
+});
+const NODE_ID_STRIP_CONTROLLER = 12;
+const ZWAVE_CONTROLLER_PATH = '/dev/ttyACM0';
+var stripControllerReady = false;
+var zwaveStarted = false;
+
+zwave.on('connected', function(homeId) {
+    console.log('[ZWAVE] Connecté');
+});
+zwave.on('driver ready', function(homeId) {
+    console.log('[ZWAVE] Driver prêt');
+    zwaveStarted = true;
+});
+zwave.on('driver failed', function(homeId) {
+    console.log('[ZWAVE][ERROR] Driver FAILED');
+    zwave.disconnect();
+});
+zwave.on('node added', function(nodeId) {
+    console.log('[ZWAVE] node %d ajouté', nodeId);
+});
+zwave.on('node ready', function(nodeId) {
+    console.log('[ZWAVE] node %d prêt', nodeId);
+    if (nodeId == NODE_ID_STRIP_CONTROLLER) {
+        stripControllerReady = true;
+    }
+});
 
 module.exports = function(app,io){
     
@@ -10,7 +44,7 @@ module.exports = function(app,io){
     var camera = undefined;
     // Storage in-memory des photos précédentes
     var picturesStore = new InMemoryStore(100);
-    //*
+    /*
     // killall  PTPCamera
     var gphoto = new GPhoto.GPhoto2();
     gphoto.list(function(cameras){
@@ -43,8 +77,13 @@ module.exports = function(app,io){
     });
 
     app.get('/manager', function(req,res){
-        // Affichage
+        // Scènes
         res.render('manager');
+    });
+
+    app.get('/zwave', function(req,res){
+        // Contrôleur zWave
+        res.render('zwave');
     });
 
     app.get('/loadPictures', function(req, res) {
@@ -163,9 +202,30 @@ module.exports = function(app,io){
             console.info('TriggerAlarm received with params %o', p);
             socket.broadcast.emit('alarm', p);
         });
-
-        socket.on('brigthness', function(v){
-            socket.broadcast.emit('brigthness', v);
+        // Vitesse de rotation du Girophare
+        socket.on('speed', function(v){
+            socket.broadcast.emit('speed', v);
+        });
+        socket.on('zwaveStart', function() {
+            if (zwaveStarted) {
+                return;
+            }
+            console.log('Connexion zWave');
+            zwave.connect(ZWAVE_CONTROLLER_PATH);
+        });
+        socket.on('zwaveSetColor', function(c) {
+            if (!stripControllerReady) {
+                return;
+            }
+            console.log('Définition de la couleur à %s', c);
+            zwave.setValue({nodeId: NODE_ID_STRIP_CONTROLLER, class_id: 51, instance: 1, index: 0}, c);
+        });
+        socket.on('zwaveSetLevel', function(l) {
+            if (!stripControllerReady) {
+                return;
+            }
+            console.log('Définition du level à %d', l);
+            zwave.setValue({nodeId: NODE_ID_STRIP_CONTROLLER, class_id: 38, instance: 1, index: 0}, l);
         });
 
         nspSocket.emit('cry');
