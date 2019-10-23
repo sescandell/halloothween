@@ -11,18 +11,33 @@
         socket.emit('zwaveStart');
     });
 
-    var timer = undefined;
+    var timerLevel = undefined;
     $('.trigger-level').on('input', function(){
-        if (undefined != timer) {
-            clearTimeout(timer);
+        if (undefined != timerLevel) {
+            clearTimeout(timerLevel);
         }
 
         var level = this.value;
-        timer = setTimeout(function() {
-            console.log('Envoi nouveau level %d', level);
-            timer = undefined;
+        timerLevel = setTimeout(function() {
+            console.log('Envoi nouveau level %s', level);
+            timerLevel = undefined;
 
             socket.emit('zwaveSetLevel', parseInt(level, 10));
+        }, 1000);
+    });
+
+    var timerColor = undefined;
+    $('.color').on('change', function(){
+        if (undefined != timerColor) {
+            clearTimeout(timerColor);
+        }
+
+        var color = this.value;
+        timerColor = setTimeout(function() {
+            console.log('Envoi nouvelle couleur %s', color);
+            timerColor = undefined;
+
+            socket.emit('zwaveSetColor', color);
         }, 1000);
     })
 
