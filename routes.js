@@ -13,8 +13,10 @@ var zwave = new OZW({
     SuppressValueRefresh: false
 });
 const NODE_ID_STRIP_CONTROLLER = 12;
+const NODE_ID_LIGHT_CONTROLLER = 13;
 const ZWAVE_CONTROLLER_PATH = '/dev/ttyACM0';
 var stripControllerReady = false;
+var lightControllerReady = false;
 var zwaveStarted = false;
 
 zwave.on('connected', function(homeId) {
@@ -35,12 +37,14 @@ zwave.on('node ready', function(nodeId) {
     console.log('[ZWAVE] node %d prêt', nodeId);
     if (nodeId == NODE_ID_STRIP_CONTROLLER) {
         stripControllerReady = true;
+    } else if (nodeId == NODE_ID_LIGHT_CONTROLLER) {
+        lightControllerReady = true;
     }
 });
 
-var lastLevel = 99;
-function setLevel(level) {
-    lastLevel = level;
+var lastColorLevel = 99;
+function setColorLevel(level) {
+    lastColorLevel = level;
 
     zwave.setValue({node_id: NODE_ID_STRIP_CONTROLLER, class_id: 38, instance: 1, index: 0}, level);
 }
@@ -50,6 +54,13 @@ function setColor(c) {
     lastColor = c;
 
     zwave.setValue({node_id: NODE_ID_STRIP_CONTROLLER, class_id: 51, instance: 1, index: 0}, c);
+}
+
+var lastLightLevel = 10;
+function setLightLevel(l) {
+    lastLightLevel = l;
+
+    zwave.setValue({node_id: NODE_ID_LIGHT_CONTROLLER, class_id: 38, instance: 1, index: 0}, l);
 }
 
 module.exports = function(app,io){
@@ -212,11 +223,14 @@ module.exports = function(app,io){
             socket.broadcast.emit('alarm', p);
 
             if (zwaveStarted) {
-                var previousLevel = lastLevel;
+                var previousColorLevel = lastColorLevel;
                 var previousColor = lastColor;
+                var previousLevel = lastLightLevel;
                 setColor('#FF0000');
+                setLevel(0);
                 setTimeout(function(){
                     setColor(previousColor);
+                    setColorLevel(previousColorLevel);
                     setLevel(previousLevel);
                 }, 22000)
             }
@@ -238,7 +252,7 @@ module.exports = function(app,io){
             }
             console.log('Définition de la couleur à %s', c);
             setColor(c);
-            setLevel(lastLevel);
+            setLevel(lastColorLevel);
         });
         
         socket.on('zwaveSetLevel', function(l) {
