@@ -39,6 +39,8 @@ zwave.on('node ready', function(nodeId) {
         stripControllerReady = true;
     } else if (nodeId == NODE_ID_LIGHT_CONTROLLER) {
         lightControllerReady = true;
+        console.log('Forcing Bi-Stable');
+        zwave.setValue({node_id: 13, class_id: 112, instance: 1, index: 20}, 1);
     }
 });
 
