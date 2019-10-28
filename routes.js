@@ -254,7 +254,7 @@ module.exports = function(app,io){
             }
             console.log('Définition de la couleur à %s', c);
             setColor(c);
-            setLevel(lastColorLevel);
+            setColorLevel(lastColorLevel);
         });
         
         socket.on('zwaveSetLevel', function(l) {
@@ -262,7 +262,7 @@ module.exports = function(app,io){
                 return;
             }
             console.log('Définition du level à %d', l);
-            setLevel(l);
+            setColorLevel(l);
         });
 
         socket.on('zwaveSetLight', function(l) {
