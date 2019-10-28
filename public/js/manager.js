@@ -52,6 +52,11 @@
         }, 300);
     });
 
+    var isChecked = $(this).is('checked');
+    $('.light').on('change', function(){
+        socket.emit('zwaveSetLight', isChecked ? '1' : '0');
+    });
+
     socket.on('cry', function(){
         console.log('Here I am');
     });

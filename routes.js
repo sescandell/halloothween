@@ -265,6 +265,15 @@ module.exports = function(app,io){
             setLevel(l);
         });
 
+        socket.on('zwaveSetLight', function(l) {
+            if (!lightControllerReady) {
+                return;
+            }
+
+            console.log('Définition de la lumière à %d', l);
+            setLightLevel(l == '0' ? 0 : 10);
+        });
+
         nspSocket.emit('cry');
 
         console.info('Envoi message "connected"');
