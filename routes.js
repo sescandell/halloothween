@@ -229,11 +229,11 @@ module.exports = function(app,io){
                 var previousColor = lastColor;
                 var previousLevel = lastLightLevel;
                 setColor('#FF0000');
-                setLevel(0);
+                setLigthLevel(0);
                 setTimeout(function(){
                     setColor(previousColor);
                     setColorLevel(previousColorLevel);
-                    setLevel(previousLevel);
+                    setLightLevel(previousLevel);
                 }, 22000)
             }
         });
