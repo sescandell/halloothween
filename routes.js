@@ -229,7 +229,7 @@ module.exports = function(app,io){
                 var previousColor = lastColor;
                 var previousLevel = lastLightLevel;
                 setColor('#FF0000');
-                setLigthLevel(0);
+                setLightLevel(0);
                 setTimeout(function(){
                     setColor(previousColor);
                     setColorLevel(previousColorLevel);
