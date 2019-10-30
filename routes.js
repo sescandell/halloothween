@@ -65,24 +65,28 @@ function setLightLevel(l) {
     zwave.setValue({node_id: NODE_ID_LIGHT_CONTROLLER, class_id: 38, instance: 1, index: 0}, l);
 }
 
-module.exports = function(app,io){
-    
+// killall  PTPCamera
+var gphoto = new GPhoto.GPhoto2();
+var camera = undefined;
+function initCamera() {
     console.info('Chargement des caméras');
-    var camera = undefined;
-    // Storage in-memory des photos précédentes
-    var picturesStore = new InMemoryStore(100);
-    /*
-    // killall  PTPCamera
-    var gphoto = new GPhoto.GPhoto2();
+
     gphoto.list(function(cameras){
         if (!cameras.length) {
-            throw 'Aucune caméra trouvée. Bye!';
+            console.error('Aucune caméra trouvée. Bye!');
+            return;
         }
 
         camera = cameras[0];
         console.info('Caméra initialisée : %s', camera.model);
     });
-    // */
+}
+
+module.exports = function(app,io) {    
+    initCamera();
+
+    // Storage in-memory des photos précédentes
+    var picturesStore = new InMemoryStore(100);
 
     app.get('/', function(req, res){
         // Photo
@@ -115,6 +119,7 @@ module.exports = function(app,io){
     fs.readdir(PICTURES_DIR, function(err, files){
         if (err) {
             console.error('[ERROR] Chargement images en échec : ' + err);
+
             return;
         }
 
@@ -272,6 +277,12 @@ module.exports = function(app,io){
 
             console.log('Définition de la lumière à %d', l);
             setLightLevel(l == '0' ? 0 : 10);
+        });
+
+        socket.on('initCamera', initCamera);
+
+        socket.on('zwaveSetLightLevel', function(l) {
+            setLightLevel(parseInt(l, 10));
         });
 
         nspSocket.emit('cry');

@@ -22,6 +22,11 @@
         socket.emit('zwaveStart');
     });
 
+    $('.camera-init').on('click', function(e){
+        e.preventDefault();
+        socket.emit('initCamera');
+    });
+
     var timerLevel = undefined;
     $('.trigger-level').on('input', function(){
         if (undefined != timerLevel) {
@@ -49,6 +54,31 @@
             timerColor = undefined;
 
             socket.emit('zwaveSetColor', color);
+        }, 300);
+    });
+
+    $('.dimmer').on('change', function(){
+        if ($(this).prop('checked')) {
+            $('.light-mode-onoff').hide();
+            $('.light-mode-dimmer').show();
+        } else {
+            $('.light-mode-onoff').show();
+            $('.light-mode-dimmer').hide();
+        }
+    });
+
+    var timerLightLevel = undefined;
+    $('.light-level').on('input', function(){
+        if (undefined != timerLightLevel) {
+            clearTimeout(timerLightLevel);
+        }
+
+        var level = this.value;
+        timerLightLevel = setTimeout(function() {
+            console.log('Envoi nouveau level %s', level);
+            timerLightLevel = undefined;
+
+            socket.emit('zwaveSetLightLevel', parseInt(level, 10));
         }, 300);
     });
 

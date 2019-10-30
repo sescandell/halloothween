@@ -32,8 +32,25 @@
             <input type="color" class= "color" value="#FF0000" />
         </p>
         <p>
-            <label>Lumiere</label>
-            <input type="checkbox" class= "light" checked="checked" />
+            <label>
+                Mode Dimmer
+                <input type="checkbox" class= "dimmer"/>
+            </label>
+        </p>
+        <p class="light-mode-onoff">
+            <label>
+                Lumiere ON/OFF
+                <input type="checkbox" class= "light" checked="checked" />
+            </label>
+        </p>
+        <p class="light-mode-dimmer" style="display:none">
+            <label>Level lumière</label>
+            <input type="range" class= "light-level" min="0" max="10" value="0" step="1" />
+        </p>
+        <hr/>
+        <h4>Caméra</h4>
+        <p>
+            <a class="camera-init" href='#'>Init caméra</a>
         </p>
     </div>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
