@@ -43,7 +43,7 @@ zwave.on('node ready', function(nodeId) {
         console.log('Forcing Bi-Stable');
         zwave.setValue({node_id: 13, class_id: 112, instance: 1, index: 20}, 1);
         console.log('Forcing Dimmable');
-        zwave.setValue({node_id: 13, class_id: 112, instance: 1, index: 32}, 2); // 0 = Dimming | 1=ON/OFF | 2=AUTO
+        zwave.setValue({node_id: 13, class_id: 112, instance: 1, index: 32}, 0); // 0 = Dimming | 1=ON/OFF | 2=AUTO
     }
 });
 
