@@ -38,6 +38,7 @@ zwave.on('node ready', function(nodeId) {
     if (nodeId == NODE_ID_STRIP_CONTROLLER) {
         stripControllerReady = true;
     } else if (nodeId == NODE_ID_LIGHT_CONTROLLER) {
+        // http://manuals.fibaro.com/content/manuals/en/FGD-212/FGD-212-EN-T-v1.3.pdf
         lightControllerReady = true;
         console.log('Forcing Bi-Stable');
         zwave.setValue({node_id: 13, class_id: 112, instance: 1, index: 20}, 1);
@@ -284,6 +285,8 @@ module.exports = function(app,io) {
         socket.on('initCamera', initCamera);
 
         socket.on('zwaveSetLightLevel', function(l) {
+            console.log('Définition de la lumière à %d', parseInt(l, 10));
+
             setLightLevel(parseInt(l, 10));
         });
 
