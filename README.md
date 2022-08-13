@@ -29,3 +29,7 @@ apt install libgphoto2-dev
 ```bash
 apt install imagemagick
 ```
+
+## Video over HTTP
+
+On Chrome: chrome://flags/#unsafely-treat-insecure-origin-as-secure and put the IP
