@@ -1,3 +1,6 @@
+:root {
+    --button-color: #f40c80;
+}
 @font-face {
     font-family: "wild-wood";
     src: url('/font/wildwood.ttf');
@@ -63,7 +66,7 @@ body{
  * PAGE CONTROLEUR
  */
 .page-controller {
-    /*background: url("/img/controller.png"); /* Halloween */
+    /*background: url("/img/controller.png");*/ /* Halloween */
     /* background: url("/img/photo-007.jpg"); */
     /*background: url("/img/emilie_controller.jpg");*/
     background: url("/img/theatre.jpg");
@@ -73,9 +76,9 @@ body{
 
 .page-controller .container{
     position: absolute;
-    top: 90px;
-    left: 180px;
-    width: 620px;
+    top: 20%;
+    left: 25%;
+    width: 50%;
     height: 300px;
 }
 .page-controller .trigger{
@@ -83,7 +86,7 @@ body{
     background: rgba(0, 0, 0, 0.5);
     font-size: 5em;
     font-weight: bold;
-    color: red;
+    color: var(--button-color);
     overflow: hidden;
     margin: 0;
     padding: 0;
@@ -211,7 +214,7 @@ body{
  * PAGE ALL IN ONE
  */
  .page-controller .preview {
-     width: 620px;
+     width: 890px;
      margin: auto;
  }
  .page-controller video {
@@ -225,7 +228,7 @@ body{
     font-weight: bolder;
     margin: auto;
     width: 60%;
-    color: #f00;
+    color: var(--button-color);
     text-align: center;
     font-size: 65px;
     margin-top: 90px;

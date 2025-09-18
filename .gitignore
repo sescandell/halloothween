@@ -15,5 +15,7 @@ nbproject
 .node_history
 public/pictures/*
 public/thumbnails/*
+public/display/*
 !public/pictures/.keep
 !public/thumbnails/.keep
+!public/display/.keep

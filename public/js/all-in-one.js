@@ -1,4 +1,4 @@
-;(function($, window, undefined){
+; (function ($, window, undefined) {
     var COUNTDOWN_TIME = 5;
 
     var countdown = undefined;
@@ -9,11 +9,11 @@
     var $trigger = $('.trigger');
     var $popinImg = $('.popin img');
     var $body = $('body');
-    var $video=$('video');
+    var $video = $('video');
     var $counter = $('.counter');
     var socket = io.connect('/socket');
 
-    $trigger.on('click', function(e){
+    $trigger.on('click', function (e) {
         e.preventDefault();
         if (undefined != countdown) {
             return;
@@ -28,8 +28,8 @@
         $counter.addClass('zoom-start');
         $counter.show();
 
-        countdown = setInterval(function() {
-            if (0==count) {
+        countdown = setInterval(function () {
+            if (0 == count) {
                 // Envoie de la demande de prise de photo
                 socket.emit('takePicture');
 
@@ -45,78 +45,86 @@
         }, 1000);
     });
 
-    socket.on('connected', function(){
+    socket.on('connected', function () {
         console.log('Connected');
         socket.emit('loadPhotos');
     });
 
-    socket.on('picture', function(path){
-        $popinImg.prop('src', '/pictures/'+path);
+    socket.on('picture', function (path) {
+        $popinImg.prop('src', '/pictures/' + path);
         $body.addClass('popin-shown');
         $counter.hide();
 
-        setTimeout(function(){
+        setTimeout(function () {
             $body.removeClass('popin-shown');
             $popinImg.prop('src', '');
-            $trigger.show();
+
+            if (!countdown) {
+                $trigger.show();
+            }
         }, 8000);
     });
 
-    socket.on('picture-thumbnail', function(path){
+    socket.on('picture-thumbnail', function (path) {
         console.log('Image disponible %o', path);
         $('<li />')
             .append(
                 $('<img />')
-                    .prop('src', '/thumbnails/'+path)
+                    .prop('src', '/thumbnails/' + path)
                     .data('path', path)
             )
             .prependTo($photos);
     });
 
-    socket.on('gallery', function(path){
+    socket.on('gallery', function (path) {
         console.log('Image disponible %o', path);
         $('<li />')
             .append(
                 $('<img />')
-                    .prop('src', '/thumbnails/'+path)
+                    .prop('src', '/thumbnails/' + path)
                     .data('path', path)
             )
             .prependTo($photos);
     });
 
-    socket.on('cry', function(){
+    socket.on('cry', function () {
         console.log('Here I am');
     });
 
-    $photos.on('click', 'img', function(){
-        $popinImg.prop('src', '/display/'+$(this).data('path'));
+    $photos.on('click', 'img', function () {
+        $popinImg.prop('src', '/display/' + $(this).data('path'));
         $body.addClass('popin-shown');
     });
 
-    $('.popin img, .overlay').click(function(){
+    $('.popin img, .overlay').click(function () {
         $body.removeClass('popin-shown');
+        $trigger.show();
     });
 
-    navigator
-        .mediaDevices
-        .getUserMedia({ video: true })
-        .then(function (stream) {
-            console.log("Récupération flux");
-            $video[0].srcObject = stream;
-        })
-        .catch(function (err0r) {
-            console.error("Erreur récupération flux vidéo");
-        });
+    try {
+        navigator
+            .mediaDevices
+            .getUserMedia({ video: true })
+            .then(function (stream) {
+                console.log("Récupération flux");
+                $video[0].srcObject = stream;
+            })
+            .catch(function (error) {
+                alert(error);
+            });
+    } catch (e) {
+        alert(e);
+    }
 
-    $('.fullscreen').on('click', function(){
+    $('.fullscreen').on('click', function () {
         var el = document.documentElement;
         if (el.requestFullscreen) {
             el.requestFullscreen();
         } else if (el.msRequestFullscreen) {
             el.msRequestFullscreen();
-        }else if (el.mozRequestFullScreen) {
+        } else if (el.mozRequestFullScreen) {
             el.mozRequestFullScreen();
-        }else if (el.webkitRequestFullscreen) {
+        } else if (el.webkitRequestFullscreen) {
             el.webkitRequestFullscreen();
         }
         $(this).hide();
