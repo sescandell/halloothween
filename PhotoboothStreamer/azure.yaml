@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/refs/heads/main/schemas/v1.0/azure.yaml.json
+
+name: photobooth-streamer
+
+infra:
+  provider: bicep
+
+services:
+  photobooth-streamer:
+    project: ./
+    host: appservice
+    language: js

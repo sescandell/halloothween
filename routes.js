@@ -1,17 +1,19 @@
 var InMemoryStore = require('./utils/InMemoryStore');
-var GPhoto = require('gphoto2');
+var AzureStreamingClient = require('./utils/AzureStreamingClient');
+var azureConfig = require('./azure-config');
+// var GPhoto = require('gphoto2');
 var fs = require('fs');
 var imageMagick = require('imagemagick');
 var PICTURES_DIR = __dirname + '/public/pictures/';
-var OZW = require('openzwave-shared');
-var zwave = new OZW({
-    ConsoleOutput: false,
-    Logging: false,
-    SaveConfiguration: false,
-    DriverMaxAttempts: 3,
-    PollInterval: 500,
-    SuppressValueRefresh: false
-});
+// var OZW = require('openzwave-shared');
+// var zwave = new OZW({
+//     ConsoleOutput: false,
+//     Logging: false,
+//     SaveConfiguration: false,
+//     DriverMaxAttempts: 3,
+//     PollInterval: 500,
+//     SuppressValueRefresh: false
+// });
 const NODE_ID_STRIP_CONTROLLER = 12;
 const NODE_ID_LIGHT_CONTROLLER = 13;
 const ZWAVE_CONTROLLER_PATH = '/dev/ttyACM0';
@@ -19,70 +21,87 @@ var stripControllerReady = false;
 var lightControllerReady = false;
 var zwaveStarted = false;
 
-zwave.on('connected', function(homeId) {
-    console.log('[ZWAVE] Connecté');
-});
-zwave.on('driver ready', function(homeId) {
-    console.log('[ZWAVE] Driver prêt');
-    zwaveStarted = true;
-});
-zwave.on('driver failed', function(homeId) {
-    console.log('[ZWAVE][ERROR] Driver FAILED');
-    zwave.disconnect();
-});
-zwave.on('node added', function(nodeId) {
-    console.log('[ZWAVE] node %d ajouté', nodeId);
-});
-zwave.on('node ready', function(nodeId) {
-    console.log('[ZWAVE] node %d prêt', nodeId);
-    if (nodeId == NODE_ID_STRIP_CONTROLLER) {
-        stripControllerReady = true;
-    } else if (nodeId == NODE_ID_LIGHT_CONTROLLER) {
-        // http://manuals.fibaro.com/content/manuals/en/FGD-212/FGD-212-EN-T-v1.3.pdf
-        lightControllerReady = true;
-        console.log('Forcing Bi-Stable');
-        zwave.setValue({node_id: 13, class_id: 112, instance: 1, index: 20}, 1);
-        console.log('Disable Dimmable');
-        zwave.setValue({node_id: 13, class_id: 112, instance: 1, index: 32}, 1); // 0 = Dimming | 1=ON/OFF | 2=AUTO
-    }
-});
-
-var lastColorLevel = 99;
-function setColorLevel(level) {
-    lastColorLevel = level;
-
-    zwave.setValue({node_id: NODE_ID_STRIP_CONTROLLER, class_id: 38, instance: 1, index: 0}, level);
+// Initialize Azure Streaming Client
+var azureClient = null;
+if (azureConfig.enabled) {
+    console.log('[AZURE] Initializing Azure Streaming Client...');
+    azureClient = new AzureStreamingClient({
+        azureUrl: azureConfig.azureUrl,
+        sharedSecret: azureConfig.sharedSecret,
+        rpiId: azureConfig.rpiId,
+        picturesDir: PICTURES_DIR
+    });
+    
+    // Connect to Azure (with retry logic)
+    azureClient.connect();
+} else {
+    console.log('[AZURE] Azure streaming disabled');
 }
 
-var lastColor = '#FF0000';
-function setColor(c) {
-    lastColor = c;
+// zwave.on('connected', function(homeId) {
+//     console.log('[ZWAVE] Connecté');
+// });
+// zwave.on('driver ready', function(homeId) {
+//     console.log('[ZWAVE] Driver prêt');
+//     zwaveStarted = true;
+// });
+// zwave.on('driver failed', function(homeId) {
+//     console.log('[ZWAVE][ERROR] Driver FAILED');
+//     zwave.disconnect();
+// });
+// zwave.on('node added', function(nodeId) {
+//     console.log('[ZWAVE] node %d ajouté', nodeId);
+// });
+// zwave.on('node ready', function(nodeId) {
+//     console.log('[ZWAVE] node %d prêt', nodeId);
+//     if (nodeId == NODE_ID_STRIP_CONTROLLER) {
+//         stripControllerReady = true;
+//     } else if (nodeId == NODE_ID_LIGHT_CONTROLLER) {
+//         // http://manuals.fibaro.com/content/manuals/en/FGD-212/FGD-212-EN-T-v1.3.pdf
+//         lightControllerReady = true;
+//         console.log('Forcing Bi-Stable');
+//         zwave.setValue({node_id: 13, class_id: 112, instance: 1, index: 20}, 1);
+//         console.log('Disable Dimmable');
+//         zwave.setValue({node_id: 13, class_id: 112, instance: 1, index: 32}, 1); // 0 = Dimming | 1=ON/OFF | 2=AUTO
+//     }
+// });
 
-    zwave.setValue({node_id: NODE_ID_STRIP_CONTROLLER, class_id: 51, instance: 1, index: 0}, c);
-}
+// var lastColorLevel = 99;
+// function setColorLevel(level) {
+//     lastColorLevel = level;
 
-var lastLightLevel = 10;
-function setLightLevel(l) {
-    lastLightLevel = l;
+//     zwave.setValue({node_id: NODE_ID_STRIP_CONTROLLER, class_id: 38, instance: 1, index: 0}, level);
+// }
 
-    zwave.setValue({node_id: NODE_ID_LIGHT_CONTROLLER, class_id: 38, instance: 1, index: 0}, l);
-}
+// var lastColor = '#FF0000';
+// function setColor(c) {
+//     lastColor = c;
+
+//     zwave.setValue({node_id: NODE_ID_STRIP_CONTROLLER, class_id: 51, instance: 1, index: 0}, c);
+// }
+
+// var lastLightLevel = 10;
+// function setLightLevel(l) {
+//     lastLightLevel = l;
+
+//     zwave.setValue({node_id: NODE_ID_LIGHT_CONTROLLER, class_id: 38, instance: 1, index: 0}, l);
+// }
 
 // killall  PTPCamera
-var gphoto = new GPhoto.GPhoto2();
+// var gphoto = new GPhoto.GPhoto2();
 var camera = undefined;
 function initCamera() {
     console.info('Chargement des caméras');
 
-    gphoto.list(function(cameras){
-        if (!cameras.length) {
-            console.error('Aucune caméra trouvée. Bye!');
-            return;
-        }
+    // gphoto.list(function(cameras){
+    //     if (!cameras.length) {
+    //         console.error('Aucune caméra trouvée. Bye!');
+    //         return;
+    //     }
 
-        camera = cameras[0];
-        console.info('Caméra initialisée : %s', camera.model);
-    });
+    //     camera = cameras[0];
+    //     console.info('Caméra initialisée : %s', camera.model);
+    // });
 }
 
 module.exports = function(app,io) {    
@@ -126,7 +145,7 @@ module.exports = function(app,io) {
             return;
         }
 
-        for (var i = 0 in files) {
+        for (var i in files) {
             if ('.' == files[i][0]) {
                 continue;
             }
@@ -166,6 +185,7 @@ module.exports = function(app,io) {
                 
                 picturesStore.add(pictureName);
                 nspSocket.emit('picture', pictureName);
+                
                 //*
                 console.info('Redimensionnements en cours ...');
                 try{
@@ -249,50 +269,58 @@ module.exports = function(app,io) {
         socket.on('speed', function(v){
             socket.broadcast.emit('speed', v);
         });
-        socket.on('zwaveStart', function() {
-            if (zwaveStarted) {
-                return;
-            }
-            console.log('Connexion zWave');
-            zwave.connect(ZWAVE_CONTROLLER_PATH);
-        });
-        socket.on('zwaveSetColor', function(c) {
-            if (!stripControllerReady) {
-                return;
-            }
-            console.log('Définition de la couleur à %s', c);
-            setColor(c);
-            setColorLevel(lastColorLevel);
-        });
+        // socket.on('zwaveStart', function() {
+        //     if (zwaveStarted) {
+        //         return;
+        //     }
+        //     console.log('Connexion zWave');
+        //     zwave.connect(ZWAVE_CONTROLLER_PATH);
+        // });
+        // socket.on('zwaveSetColor', function(c) {
+        //     if (!stripControllerReady) {
+        //         return;
+        //     }
+        //     console.log('Définition de la couleur à %s', c);
+        //     setColor(c);
+        //     setColorLevel(lastColorLevel);
+        // });
         
-        socket.on('zwaveSetLevel', function(l) {
-            if (!stripControllerReady) {
-                return;
-            }
-            console.log('Définition du level à %d', l);
-            setColorLevel(l);
-        });
+        // socket.on('zwaveSetLevel', function(l) {
+        //     if (!stripControllerReady) {
+        //         return;
+        //     }
+        //     console.log('Définition du level à %d', l);
+        //     setColorLevel(l);
+        // });
 
-        socket.on('zwaveSetLight', function(l) {
-            if (!lightControllerReady) {
-                return;
-            }
+        // socket.on('zwaveSetLight', function(l) {
+        //     if (!lightControllerReady) {
+        //         return;
+        //     }
 
-            console.log('Définition de la lumière à %d', l);
-            setLightLevel(l == '0' ? 0 : 10);
-        });
+        //     console.log('Définition de la lumière à %d', l);
+        //     setLightLevel(l == '0' ? 0 : 10);
+        // });
+
+        // socket.on('zwaveSetLightLevel', function(l) {
+        //     console.log('Définition de la lumière à %d', parseInt(l, 10));
+
+        //     setLightLevel(parseInt(l, 10));
+        // });
 
         socket.on('initCamera', initCamera);
-
-        socket.on('zwaveSetLightLevel', function(l) {
-            console.log('Définition de la lumière à %d', parseInt(l, 10));
-
-            setLightLevel(parseInt(l, 10));
-        });
 
         nspSocket.emit('cry');
 
         console.info('Envoi message "connected"');
         socket.emit('connected');
+        
+        // Send Azure URL to front if Azure is enabled
+        if (azureClient && azureConfig.enabled) {
+            socket.emit('azure-config', {
+                azureUrl: azureConfig.azureUrl,
+                rpiId: azureConfig.rpiId
+            });
+        }
     });
 };
