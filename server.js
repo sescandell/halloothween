@@ -1,19 +1,23 @@
-var cors = require('cors');
-var app = require('express')();
+const cors = require('cors');
+const express = require('express');
+const { createServer } = require('node:http');
+const { Server } = require('socket.io');
+
+const app = express();
 app.use(cors());
+const server = createServer(app);
+const io = new Server(server);
+
 
 // Required for taking into account Azure Cloud Environment
-var port = process.env.PORT || 8181;
-
-
-// Initialize a new socket.io object. It is bound to 
-// the express app, which allows them to coexist.
-var io = require('socket.io').listen(app.listen(port));
-
+const port = process.env.PORT || 8181;
 
 // Require the configuration and the routes files, and pass
 // the app and io as arguments to the returned functions.
 require('./config')(app, io);
 require('./routes')(app, io);
 
-console.log('Application is running listening on ' + port);
+
+server.listen(port, () => {
+  console.log('server running at port ' + port);
+});

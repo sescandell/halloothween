@@ -37,7 +37,7 @@ class AzureStreamingClient {
             },
             reconnection: true,
             reconnectionDelay: 2000,
-            reconnectionAttempts: this.maxReconnectAttempts
+            reconnectionAttempts: this.maxReconnectAttempts,
         });
 
         this.setupEventHandlers();
@@ -106,6 +106,7 @@ class AzureStreamingClient {
             
             this.socket.emit('photo-data', {
                 requestId,
+                photoId,  // Include photoId for proper filename
                 photoData,
                 mimeType: 'image/jpeg'
             });

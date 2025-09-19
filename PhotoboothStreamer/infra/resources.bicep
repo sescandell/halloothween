@@ -14,13 +14,11 @@ param resourcePrefix string
 @secure()
 param sharedSecret string
 
-@description('Port for the application')
-param port string
-
-// App Service Plan
+// App Service Plan (Linux B1 - Basic tier for better quota)
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   name: 'az-${resourcePrefix}-asp-${resourceToken}'
   location: location
+  kind: 'linux'
   sku: {
     name: 'B1'
     tier: 'Basic'
@@ -29,21 +27,22 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
     capacity: 1
   }
   properties: {
-    reserved: false
+    reserved: true  // true = Linux, false = Windows
   }
   tags: {
     'azd-env-name': environmentName
   }
 }
 
-// App Service
+// App Service (Linux with Node.js 23)
 resource appService 'Microsoft.Web/sites@2023-12-01' = {
   name: 'az-${resourcePrefix}-app-${resourceToken}'
   location: location
+  kind: 'app,linux'
   properties: {
     serverFarmId: appServicePlan.id
     siteConfig: {
-      nodeVersion: '18-lts'
+      linuxFxVersion: 'NODE|22-lts'  // Latest Node.js 22 LTS
       cors: {
         allowedOrigins: ['*']
         supportCredentials: false
@@ -54,12 +53,8 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
           value: sharedSecret
         }
         {
-          name: 'PORT'
-          value: port
-        }
-        {
           name: 'WEBSITE_NODE_DEFAULT_VERSION'
-          value: '18.17.0'
+          value: '22.0.0'
         }
       ]
     }

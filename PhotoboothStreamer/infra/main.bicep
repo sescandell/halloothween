@@ -16,9 +16,6 @@ param resourceGroupName string
 @secure()
 param sharedSecret string
 
-@description('Port for the application')
-param port string = '3000'
-
 // Generate resource token for unique resource names
 var resourceToken = uniqueString(subscription().id, location, environmentName)
 var resourcePrefix = 'pbs' // photobooth-streamer prefix
@@ -42,7 +39,6 @@ module resources 'resources.bicep' = {
     resourceToken: resourceToken
     resourcePrefix: resourcePrefix
     sharedSecret: sharedSecret
-    port: port
   }
 }
 

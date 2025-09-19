@@ -248,23 +248,23 @@ module.exports = function(app,io) {
             nspSocket.emit('cry');
         });
 
-        socket.on('triggerAlarm', function(p) {
-            console.info('TriggerAlarm received with params %o', p);
-            socket.broadcast.emit('alarm', p);
+        // socket.on('triggerAlarm', function(p) {
+        //     console.info('TriggerAlarm received with params %o', p);
+        //     socket.broadcast.emit('alarm', p);
 
-            if (zwaveStarted) {
-                var previousColorLevel = lastColorLevel;
-                var previousColor = lastColor;
-                var previousLevel = lastLightLevel;
-                setColor('#FF0000');
-                setLightLevel(0);
-                setTimeout(function(){
-                    setColor(previousColor);
-                    setColorLevel(previousColorLevel);
-                    setLightLevel(previousLevel);
-                }, 22000)
-            }
-        });
+        //     if (zwaveStarted) {
+        //         var previousColorLevel = lastColorLevel;
+        //         var previousColor = lastColor;
+        //         var previousLevel = lastLightLevel;
+        //         setColor('#FF0000');
+        //         setLightLevel(0);
+        //         setTimeout(function(){
+        //             setColor(previousColor);
+        //             setColorLevel(previousColorLevel);
+        //             setLightLevel(previousLevel);
+        //         }, 22000)
+        //     }
+        // });
         // Vitesse de rotation du Girophare
         socket.on('speed', function(v){
             socket.broadcast.emit('speed', v);

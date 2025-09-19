@@ -59,24 +59,29 @@ io.on('connection', (socket) => {
   
   // Handle photo data from RPI
   socket.on('photo-data', (data) => {
-    const { requestId, photoData, mimeType = 'image/jpeg' } = data;
+    const { requestId, photoData, mimeType = 'image/jpeg', photoId } = data;
     
     console.log(`📸 Received photo data for request: ${requestId}`);
     
     if (pendingRequests.has(requestId)) {
-      const { res } = pendingRequests.get(requestId);
+      const { res, photoId: requestedPhotoId } = pendingRequests.get(requestId);
       
       try {
         // Convert base64 to buffer
         const imageBuffer = Buffer.from(photoData, 'base64');
         
-        // Set headers and send image
+        // Generate filename with timestamp if no photoId provided
+        const filename = photoId || requestedPhotoId || `photo-${Date.now()}.jpg`;
+        const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, ''); // Sanitize filename
+        
+        // Set headers for download
         res.setHeader('Content-Type', mimeType);
         res.setHeader('Content-Length', imageBuffer.length);
+        res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
         res.setHeader('Cache-Control', 'no-cache');
         res.send(imageBuffer);
         
-        console.log(`✅ Photo streamed successfully for request: ${requestId}`);
+        console.log(`✅ Photo downloaded successfully for request: ${requestId} as ${safeFilename}`);
       } catch (error) {
         console.error(`❌ Error streaming photo for request ${requestId}:`, error);
         res.status(500).json({ error: 'Failed to process image' });
@@ -170,8 +175,8 @@ app.get('/stream/:photoId', async (req, res) => {
   // Generate unique request ID
   const requestId = uuidv4();
   
-  // Store the response object for later use
-  pendingRequests.set(requestId, { res, timestamp: Date.now() });
+  // Store the response object for later use (including photoId for filename)
+  pendingRequests.set(requestId, { res, photoId, timestamp: Date.now() });
   
   // Request photo from RPI
   rpiSocket.emit('request-photo', {
