@@ -1,7 +1,7 @@
 var InMemoryStore = require('./utils/InMemoryStore');
 var AzureStreamingClient = require('./utils/AzureStreamingClient');
 var azureConfig = require('./azure-config');
-// var GPhoto = require('gphoto2');
+var GPhoto = require('gphoto2');
 var fs = require('fs');
 var imageMagick = require('imagemagick');
 var PICTURES_DIR = __dirname + '/public/pictures/';
@@ -88,20 +88,20 @@ if (azureConfig.enabled) {
 // }
 
 // killall  PTPCamera
-// var gphoto = new GPhoto.GPhoto2();
+var gphoto = new GPhoto.GPhoto2();
 var camera = undefined;
 function initCamera() {
     console.info('Chargement des caméras');
 
-    // gphoto.list(function(cameras){
-    //     if (!cameras.length) {
-    //         console.error('Aucune caméra trouvée. Bye!');
-    //         return;
-    //     }
+    gphoto.list(function(cameras){
+        if (!cameras.length) {
+            console.error('Aucune caméra trouvée. Bye!');
+            return;
+        }
 
-    //     camera = cameras[0];
-    //     console.info('Caméra initialisée : %s', camera.model);
-    // });
+        camera = cameras[0];
+        console.info('Caméra initialisée : %s', camera.model);
+    });
 }
 
 module.exports = function(app,io) {    
@@ -266,9 +266,9 @@ module.exports = function(app,io) {
         //     }
         // });
         // Vitesse de rotation du Girophare
-        socket.on('speed', function(v){
-            socket.broadcast.emit('speed', v);
-        });
+        // socket.on('speed', function(v){
+        //     socket.broadcast.emit('speed', v);
+        // });
         // socket.on('zwaveStart', function() {
         //     if (zwaveStarted) {
         //         return;
