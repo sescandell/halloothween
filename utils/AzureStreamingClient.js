@@ -38,6 +38,9 @@ class AzureStreamingClient {
             reconnection: true,
             reconnectionDelay: 2000,
             reconnectionAttempts: this.maxReconnectAttempts,
+            timeout: 60000,         // 60 secondes timeout
+            forceNew: true,         // Force nouvelle connexion
+            maxHttpBufferSize: 10e6 // 10MB buffer (côté client)
         });
 
         this.setupEventHandlers();

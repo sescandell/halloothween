@@ -11,12 +11,15 @@ const server = http.createServer(app);
 app.use(cors());
 app.use(express.json());
 
-// Socket.IO configuration
+// Socket.IO configuration avec support des gros fichiers
 const io = socketIo(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
-  }
+  },
+  maxHttpBufferSize: 10e6, // 10MB pour supporter les grosses images
+  pingTimeout: 60000,      // 60 secondes timeout
+  pingInterval: 25000      // Ping toutes les 25 secondes
 });
 
 // Configuration
