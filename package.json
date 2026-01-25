@@ -8,12 +8,12 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "cors": "2.7.1",
+    "cors": "^2.8.6",
     "ejs": "~0.8.5",
     "express": "^5.2.1",
     "sharp": "^0.34.5",
-    "socket.io": "^4.7.2",
-    "socket.io-client": "^4.7.2"
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
   },
   "optionalDependencies": {
     "gphoto2": "^0.3.2",
