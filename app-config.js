@@ -43,5 +43,13 @@ export default {
         name: process.env.PRINTER_NAME || 'DNP QW410',
         // Mode d'impression (auto, manual)
         mode: process.env.PRINTER_MODE || 'auto'
+    },
+    
+    // Configuration du cadre d'impression
+    printFrame: {
+        // Activer ou désactiver le cadre overlay
+        enabled: process.env.PRINT_FRAME_ENABLED === 'true',
+        // Chemin vers le fichier PNG de cadre (relatif à la racine du projet)
+        framePath: process.env.PRINT_FRAME_PATH || null
     }
 };

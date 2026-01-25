@@ -8,6 +8,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
+import { FrameComposer } from './FrameComposer.js';
 
 const execAsync = promisify(exec);
 
@@ -16,10 +17,12 @@ export class PrinterClient {
         this.enabled = config.enabled;
         this.printerName = config.name;
         this.mode = config.mode;
+        this.frameConfig = config.frameConfig || null;
         this.platform = process.platform;
         this.available = false;
         this.simulationMode = false;
         this.detectedPrinters = [];
+        this.frameComposer = null;
         
         console.log(`[PRINTER] Initializing PrinterClient on ${this.platform}...`);
     }
@@ -31,6 +34,13 @@ export class PrinterClient {
         if (!this.enabled) {
             console.log('[PRINTER] Printing is disabled in configuration');
             return;
+        }
+
+        // Initialize Frame Composer (works on all platforms)
+        if (this.frameConfig && this.frameConfig.enabled) {
+            console.log('[PRINTER] Initializing Frame Composer...');
+            this.frameComposer = new FrameComposer(this.frameConfig);
+            await this.frameComposer.initialize();
         }
 
         // Force SIMULATION mode on Windows (no real printer support)
@@ -111,11 +121,25 @@ export class PrinterClient {
             throw new Error(`Photo file not found: ${photoPath}`);
         }
 
-        console.log(`[PRINTER] Printing: ${path.basename(photoPath)} to "${this.printerName}"`);
+        // STEP 1: Compose with frame if enabled
+        let finalPhotoPath = photoPath;
+        if (this.frameComposer && this.frameComposer.isAvailable()) {
+            try {
+                console.log(`[PRINTER] Composing photo with frame overlay...`);
+                finalPhotoPath = await this.frameComposer.composeForPrint(photoPath);
+                console.log(`[PRINTER] ✓ Using framed version for printing`);
+            } catch (error) {
+                console.error('[PRINTER] ⚠️  Frame composition failed:', error.message);
+                console.log('[PRINTER] → Falling back to original photo');
+                // Continue with original photo (finalPhotoPath stays unchanged)
+            }
+        }
 
-        // Simulation mode - save a copy to /print folder
+        console.log(`[PRINTER] Printing: ${path.basename(finalPhotoPath)} to "${this.printerName}"`);
+
+        // STEP 2: Simulation mode - save a copy to /print folder
         if (this.simulationMode) {
-            console.log(`[PRINTER] 🖨️  SIMULATION: Would print ${path.basename(photoPath)}`);
+            console.log(`[PRINTER] 🖨️  SIMULATION: Would print ${path.basename(finalPhotoPath)}`);
             
             try {
                 // Create print directory if it doesn't exist
@@ -127,11 +151,11 @@ export class PrinterClient {
                 
                 // Copy the photo to the print folder with timestamp prefix
                 const timestamp = Date.now();
-                const originalName = path.basename(photoPath);
+                const originalName = path.basename(finalPhotoPath);
                 const printFileName = `print_${timestamp}_${originalName}`;
                 const printPath = path.join(printDir, printFileName);
                 
-                fs.copyFileSync(photoPath, printPath);
+                fs.copyFileSync(finalPhotoPath, printPath);
                 console.log(`[PRINTER] ✓ SIMULATION: Saved print preview to /print/${printFileName}`);
                 
                 // Simulate printing delay
@@ -147,9 +171,9 @@ export class PrinterClient {
             return;
         }
 
-        // Actual printing via CUPS (Linux/RPI only)
+        // STEP 3: Actual printing via CUPS (Linux/RPI only)
         try {
-            await this._printViaCUPS(photoPath);
+            await this._printViaCUPS(finalPhotoPath);
             console.log('[PRINTER] ✓ Print job sent successfully');
         } catch (error) {
             console.error('[PRINTER] ✗ Print job failed:', error.message);

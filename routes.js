@@ -57,7 +57,8 @@ if (appConfig.printer.enabled) {
     printerClient = new PrinterClient({
         enabled: appConfig.printer.enabled,
         name: appConfig.printer.name,
-        mode: appConfig.printer.mode
+        mode: appConfig.printer.mode,
+        frameConfig: appConfig.printFrame
     });
     
     // Initialize will be called in the async function below
