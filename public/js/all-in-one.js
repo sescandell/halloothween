@@ -6,6 +6,7 @@
     // Application configuration
     var appConfig = null;
     var qrCache = {}; // Cache for generated QR codes
+    var currentPhotoId = null; // Current photo ID for printing
     
     // Stream vidéo (référence globale pour pause/resume)
     var videoStream = null;
@@ -18,6 +19,7 @@
     var $qrOverlay = $('.qr-overlay');
     var $qrLoader = $('.qr-loader');
     var $qrCode = $('.qr-code');
+    var $printBtn = $('.print-photo');
     var $body = $('body');
     var $video = $('video');
     var $counter = $('.counter');
@@ -96,6 +98,14 @@
             console.log('[CONFIG] Pause stream mode ENABLED');
         } else {
             console.log('[CONFIG] Pause stream mode DISABLED (direct capture)');
+        }
+        
+        // Show print button if printer enabled
+        if (config.printerEnabled) {
+            console.log('[CONFIG] Printer ENABLED');
+            $printBtn.show();
+        } else {
+            console.log('[CONFIG] Printer DISABLED');
         }
     });
 
@@ -199,7 +209,15 @@
         }
     }
 
+    socket.on('picture-display', function (path) {
+        console.log('[PHOTO] Display version ready: %o', path);
+        currentPhotoId = path; // Store for printing
+    });
+
     socket.on('picture', function (path) {
+        // Store photo ID for printing
+        currentPhotoId = path;
+        
         // Display image immediately for performance
         $popinImg.prop('src', '/pictures/' + path);
         $body.addClass('popin-shown');
@@ -253,8 +271,44 @@
         console.log('Here I am');
     });
 
+    // Print button handler
+    $printBtn.on('click', function() {
+        if (!currentPhotoId) {
+            console.error('[PRINT] No photo ID available');
+            alert('Aucune photo à imprimer');
+            return;
+        }
+        
+        console.log('[PRINT] Requesting print for:', currentPhotoId);
+        socket.emit('printPhoto', { photoId: currentPhotoId });
+        
+        // Visual feedback
+        $printBtn.prop('disabled', true).text('⏳ Impression en cours...');
+    });
+
+    // Print success handler
+    socket.on('printSuccess', function(data) {
+        console.log('[PRINT] Success:', data);
+        $printBtn.prop('disabled', false).text('✓ Imprimé !');
+        
+        // Reset button text after 3 seconds
+        setTimeout(function() {
+            $printBtn.text('🖨️ Imprimer la photo');
+        }, 3000);
+    });
+
+    // Print error handler
+    socket.on('printError', function(data) {
+        console.error('[PRINT] Error:', data);
+        alert('Erreur d\'impression : ' + data.message);
+        $printBtn.prop('disabled', false).text('🖨️ Imprimer la photo');
+    });
+
     $photos.on('click', 'img', function () {
         var photoPath = $(this).data('path');
+        
+        // Store photo ID for printing
+        currentPhotoId = photoPath;
         
         // Display clicked photo immediately for performance
         $popinImg.prop('src', '/display/' + photoPath);

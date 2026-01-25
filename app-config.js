@@ -33,5 +33,23 @@ export default {
         url: process.env.STREAMER_URL || 'https://az-pbs-app-tsssv4bwknape.azurewebsites.net',
         // Secret partagé pour l'authentification
         sharedSecret: process.env.STREAMER_SHARED_SECRET || '',
+    },
+    
+    // Configuration de l'imprimante
+    printer: {
+        // Activer ou désactiver l'impression
+        enabled: process.env.PRINTER_ENABLED === 'true',
+        // Nom de l'imprimante (tel qu'affiché par le système)
+        name: process.env.PRINTER_NAME || 'DNP QW410',
+        // Mode d'impression (auto, manual)
+        mode: process.env.PRINTER_MODE || 'auto'
+    },
+    
+    // Configuration du cadre d'impression
+    printFrame: {
+        // Activer ou désactiver le cadre overlay
+        enabled: process.env.PRINT_FRAME_ENABLED === 'true',
+        // Chemin vers le fichier PNG de cadre (relatif à la racine du projet)
+        framePath: process.env.PRINT_FRAME_PATH || null
     }
 };
