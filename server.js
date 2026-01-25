@@ -20,6 +20,10 @@ config(app, io);
 await routes(app, io);
 
 
-server.listen(port, () => {
+server.listen(port, (error) => {
+  if (error) {
+    console.error('[ERROR] Failed to start server:', error);
+    process.exit(1);
+  }
   console.log('server running at port ' + port);
 });

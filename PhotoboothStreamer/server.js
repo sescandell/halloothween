@@ -205,7 +205,11 @@ app.get('/stream/:photoId', async (req, res) => {
 });
 
 // Start server
-server.listen(PORT, () => {
+server.listen(PORT, (error) => {
+  if (error) {
+    console.error('[ERROR] Failed to start PhotoboothStreamer server:', error);
+    process.exit(1);
+  }
   console.log(`🌐 PhotoboothStreamer listening on port ${PORT}`);
   console.log(`🔗 Stream endpoint: http://localhost:${PORT}/stream/{photoId}`);
   console.log(`🏥 Health check: http://localhost:${PORT}/health`);
