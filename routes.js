@@ -4,6 +4,7 @@ import azureConfig from './azure-config.js';
 import { createCameraAdapter } from './utils/CameraAdapter.js';
 import fs from 'fs';
 import sharp from 'sharp';
+import { smartSharp } from './utils/bmpToSharp.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -196,43 +197,42 @@ export default async function(app,io) {
 
                 const pictureName = Date.now() + '.jpg';
                 
-                // Convertir l'image avec Sharp (gère tous les formats automatiquement)
-                // et sauvegarder en JPEG de haute qualité
-                console.info('Conversion et sauvegarde de l\'image originale...');
-                await sharp(pictureData)
+                // Auto-detect BMP and convert if needed, otherwise use Sharp directly
+                const sharpInstance = smartSharp(pictureData);
+                
+                // Save original image as JPEG
+                await sharpInstance
+                    .clone()
                     .jpeg({ quality: 95, progressive: true })
                     .toFile(PICTURES_DIR + pictureName);
                 
-                console.info('Image originale sauvegardée');
                 picturesStore.add(pictureName);
                 nspSocket.emit('picture', pictureName);
                 
-                // Redimensionnements en parallèle avec Sharp (depuis le buffer original)
-                console.info('Redimensionnements en cours ...');
-                
+                // Generate thumbnail and display versions in parallel
                 await Promise.all([
                     // Thumbnail 158px
-                    sharp(pictureData)
+                    sharpInstance
+                        .clone()
                         .resize(158, null, { fit: 'inside', withoutEnlargement: true })
                         .jpeg({ quality: 90, progressive: true })
                         .toFile(PICTURES_DIR + '../thumbnails/' + pictureName)
                         .then(() => {
-                            console.info("\tThumbnail fait !");
                             nspSocket.emit('picture-thumbnail', pictureName);
                         }),
                     
                     // Display 1024px
-                    sharp(pictureData)
+                    sharpInstance
+                        .clone()
                         .resize(1024, null, { fit: 'inside', withoutEnlargement: true })
                         .jpeg({ quality: 90, progressive: true })
                         .toFile(PICTURES_DIR + '../display/' + pictureName)
                         .then(() => {
-                            console.info("\tDisplay fait !");
                             nspSocket.emit('picture-display', pictureName);
                         })
                 ]);
                 
-                console.info('Redimensionnements terminés avec succès');
+                console.info('[IMAGE] Photo processing complete:', pictureName);
                 
             } catch (error) {
                 console.error('Erreur prise de photo:', error);

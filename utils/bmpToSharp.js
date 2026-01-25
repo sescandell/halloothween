@@ -27,20 +27,26 @@ export function isBMP(buffer) {
  */
 export function sharpFromBMP(bmpBuffer) {
     // Decode BMP with toRGBA option for correct channel order
+    // IMPORTANT: toRGBA: true converts ALL BMP formats (24-bit, 32-bit, etc.)
+    // to RGBA format, which ALWAYS results in 4 channels
     const decoded = decodeBmp(bmpBuffer, { toRGBA: true });
     
-    // Determine number of channels based on bit depth
-    // 32-bit BMP = RGBA (4 channels), 24-bit = RGB (3 channels)
-    // 1/4/8-bit with palette are converted to RGBA by toRGBA option
-    const channels = decoded.bitPP === 32 ? 4 : 
-                    decoded.bitPP === 24 ? 3 : 4;
+    // BUG FIX: bmp-ts sets alpha channel to 0 for 24-bit BMP
+    // This causes transparent pixels which appear black in JPEG conversion
+    // Solution: Set all alpha values to 255 (fully opaque) for 24-bit BMP
+    if (decoded.bitPP === 24) {
+        for (let i = 3; i < decoded.data.length; i += 4) {
+            decoded.data[i] = 255;
+        }
+    }
     
     // Create Sharp instance from raw pixel data
+    // Always 4 channels (RGBA) when using toRGBA: true
     return sharp(decoded.data, {
         raw: {
             width: decoded.width,
             height: decoded.height,
-            channels: channels
+            channels: 4
         }
     });
 }
