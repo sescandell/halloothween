@@ -3,7 +3,13 @@
  * Ajustez ces paramètres selon votre déploiement Azure
  */
 
-module.exports = {
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+export default {
     // URL de l'Azure App Service (à modifier après déploiement)
     azureUrl: process.env.AZURE_STREAMER_URL || 'https://az-pbs-app-tsssv4bwknape.azurewebsites.net',
     
