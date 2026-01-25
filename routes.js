@@ -98,13 +98,21 @@ if (appConfig.streamer.enabled) {
 //     zwave.setValue({node_id: NODE_ID_LIGHT_CONTROLLER, class_id: 38, instance: 1, index: 0}, l);
 // }
 
+// Helper function pour sleep/delay
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // killall  PTPCamera
-var gphoto = await createCameraAdapter();
 var camera = undefined;
+
 async function initCamera() {
     console.info('Chargement des caméras');
 
-    gphoto.list(function(cameras){
+    try {
+        const adapter = await createCameraAdapter();
+        const cameras = await adapter.list();
+        
         if (!cameras.length) {
             console.error('Aucune caméra trouvée. Bye!');
             return;
@@ -112,7 +120,10 @@ async function initCamera() {
 
         camera = cameras[0];
         console.info('Caméra initialisée : %s', camera.model);
-    });
+    } catch (error) {
+        console.error('[CAMERA] Erreur lors de l\'initialisation:', error);
+        throw error;
+    }
 }
 
 export default async function(app,io) {    
@@ -181,17 +192,12 @@ export default async function(app,io) {
                 // Si mode pause, attendre 1s pour que Windows libère la webcam
                 if (PAUSE_STREAM_MODE) {
                     console.info('[PAUSE MODE] Waiting 1s for stream release...');
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await sleep(1000);
                 }
                 
-                // Promisifier camera.takePicture()
-                const pictureData = await new Promise((resolve, reject) => {
-                    camera.takePicture({
-                        download: true
-                    }, (er, data) => {
-                        if (er) reject(er);
-                        else resolve(data);
-                    });
+                // Utiliser l'API async/await de la caméra
+                const pictureData = await camera.takePicture({
+                    download: true
                 });
 
                 const pictureName = Date.now() + '.jpg';

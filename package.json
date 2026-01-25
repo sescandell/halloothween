@@ -18,12 +18,12 @@
     "socket.io-client": "^4.8.3"
   },
   "optionalDependencies": {
+    "@photobot/gphoto2-camera": "^2.8.0",
     "gphoto2": "^0.3.2",
     "node-webcam": "^0.8.1"
   },
   "scripts": {
     "postinstall": "node install-camera-deps.cjs",
-    "debug": "node debug server.js",
     "start": "node server.js"
   },
   "main": "app.js",

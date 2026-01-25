@@ -42,12 +42,18 @@ npm --version
 #### For Raspberry Pi (gphoto2 for DSLR cameras)
 
 ```bash
-# Install gphoto2 development libraries
+# Install gphoto2 runtime libraries (required for modern driver)
+sudo apt install libgphoto2-6 libgphoto2-port12
+
+# Install development libraries (only needed for legacy driver compilation)
 sudo apt install libgphoto2-dev
 
 # Verify gphoto2 is working
 gphoto2 --version
+gphoto2 --auto-detect
 ```
+
+**Note**: The modern `@photobot/gphoto2-camera` driver uses FFI (Foreign Function Interface) and only requires runtime libraries (`libgphoto2-6`). The legacy `gphoto2` driver requires native compilation and needs development libraries (`libgphoto2-dev`).
 
 #### For Windows Development (webcam)
 
@@ -93,6 +99,9 @@ cp .env.example .env
 Edit `.env` with your settings:
 
 ```bash
+# Camera Driver Configuration
+CAMERA_DRIVER=auto                           # Options: auto, gphoto2, gphoto2-legacy, webcam
+
 # Azure Streaming (optional)
 AZURE_ENABLED=false                          # Set to true to enable Azure
 AZURE_STREAMER_URL=https://your-app.azurewebsites.net
@@ -102,6 +111,21 @@ RPI_ID=rpi-001
 # Capture Mode
 PAUSE_STREAM_ON_CAPTURE=true                 # true for Windows webcam, false for Linux/gphoto2
 ```
+
+#### Camera Driver Options
+
+| Driver | Description | Platform | Recommended For |
+|--------|-------------|----------|-----------------|
+| `auto` | Automatic detection with fallback (default) | All | Most users |
+| `gphoto2` | Modern FFI-based driver (@photobot/gphoto2-camera) | Linux/RPI | RPI with DSLR (best performance) |
+| `gphoto2-legacy` | Legacy native driver (gphoto2 npm package) | Linux/RPI | Fallback if modern driver fails |
+| `webcam` | System webcam driver (node-webcam) | All | Windows development or webcam-based setups |
+
+**Auto Mode Behavior**:
+- **Windows**: Uses `webcam` driver automatically
+- **Linux/RPI**: Tries `gphoto2` → `gphoto2-legacy` → `webcam` (in order until one succeeds)
+
+**Explicit Mode**: Set a specific driver to disable automatic fallback (useful for debugging).
 
 ---
 
@@ -149,8 +173,9 @@ Open your browser and navigate to:
 | Real-time | Socket.IO | 4.8.3 |
 | Image Processing | Sharp | 0.34.5 |
 | Template Engine | EJS | 4.0.1 |
-| Camera (Linux) | gphoto2 | 0.3.2 (optional) |
-| Camera (Windows) | node-webcam | 0.8.1 (optional) |
+| Camera (Modern) | @photobot/gphoto2-camera | 2.8.0 (optional) |
+| Camera (Legacy) | gphoto2 | 0.3.2 (optional) |
+| Camera (Webcam) | node-webcam | 0.8.1 (optional) |
 
 ### Project Structure
 
@@ -162,9 +187,14 @@ halloothween/
 ├── app-config.js             # Application configuration factory
 ├── .env                      # Environment variables (create from .env.example)
 ├── utils/
+│   ├── camera-config.js      # Camera driver configuration
 │   ├── CameraAdapter.js      # Async factory for camera selection
-│   ├── GPhotoCamera.js       # gphoto2 wrapper (Linux/DSLR)
-│   ├── WebcamCamera.js       # Webcam wrapper (Windows)
+│   ├── cameras/
+│   │   ├── GPhoto2Camera.js       # Modern gphoto2 driver (FFI-based)
+│   │   ├── GPhoto2LegacyCamera.js # Legacy gphoto2 driver (native)
+│   │   └── WebcamCamera.js        # Webcam driver
+│   ├── GPhotoCamera.js       # (deprecated, use cameras/GPhoto2Camera.js)
+│   ├── WebcamCamera.js       # (deprecated, use cameras/WebcamCamera.js)
 │   ├── AzureStreamingClient.js  # Azure connection client
 │   ├── InMemoryStore.js      # Simple in-memory storage
 │   └── bmpToSharp.js         # BMP format auto-detection and conversion
@@ -184,20 +214,68 @@ halloothween/
     └── package.json          # Separate dependencies
 ```
 
-### Camera Detection
+### Camera Detection & Driver Selection
 
-The application automatically detects the platform and selects the appropriate camera:
+The application uses a multi-driver camera system with automatic fallback:
 
-- **Windows**: Uses system webcam via `node-webcam`
-- **Linux/Raspberry Pi**: Uses gphoto2 for DSLR cameras
+#### Configuration
 
-This is handled by `utils/CameraAdapter.js` using an async factory pattern:
+Set the `CAMERA_DRIVER` environment variable in `.env`:
+
+```bash
+CAMERA_DRIVER=auto   # Automatic detection (recommended)
+```
+
+#### Available Drivers
+
+1. **gphoto2** (Modern) - Uses `@photobot/gphoto2-camera` (FFI-based, no native compilation)
+   - Best performance on Raspberry Pi with DSLR cameras
+   - Requires `libgphoto2` installed on system
+
+2. **gphoto2-legacy** - Uses legacy `gphoto2` npm package (native bindings)
+   - Fallback option if modern driver fails
+   - Requires `libgphoto2-dev` for compilation
+   - Last updated 2022 (no longer maintained)
+
+3. **webcam** - Uses `node-webcam` for system webcams
+   - Works on both Windows and Linux
+   - Best for development without DSLR
+
+#### Auto-Detection Behavior
+
+**Windows**:
+```
+webcam (direct - no fallback)
+```
+
+**Linux/Raspberry Pi**:
+```
+gphoto2 → gphoto2-legacy → webcam (tries in order until success)
+```
+
+#### Implementation
+
+Camera selection is handled by `utils/CameraAdapter.js`:
 
 ```javascript
 // ES Modules (v2.0.0+)
 import { createCameraAdapter } from './utils/CameraAdapter.js';
 
-const camera = await createCameraAdapter();  // Auto-detects platform
+// Auto-detect (uses CAMERA_DRIVER env var)
+const camera = await createCameraAdapter();
+
+// Force specific driver (for testing)
+const camera = await createCameraAdapter('webcam');
+```
+
+All camera drivers implement a unified async API:
+
+```javascript
+// List available cameras
+const cameras = await camera.list();
+
+// Take a picture
+const imageBuffer = await camera.takePicture();
 ```
 
 ### Image Processing Pipeline (Sharp)
@@ -274,7 +352,30 @@ Make sure you're using Node.js >= 18.0.0 and `package.json` has `"type": "module
 
 ### Error: "gphoto2 module not found" on Windows
 
-This is normal. On Windows, the application will automatically fall back to webcam mode. The gphoto2 module is optional.
+This is normal. On Windows, the application will automatically fall back to webcam mode. The gphoto2 drivers are optional and only used on Linux/RPI.
+
+### Camera driver issues
+
+Check which driver is being used in the server logs:
+
+```
+[CameraAdapter] Using driver: webcam (Windows platform)
+[CameraAdapter] Using driver: gphoto2 (modern driver loaded successfully)
+[CameraAdapter] Using driver: gphoto2-legacy (fallback from modern driver)
+```
+
+To force a specific driver for testing:
+
+```bash
+# In .env
+CAMERA_DRIVER=webcam  # Force webcam driver
+```
+
+To see fallback behavior, check server startup logs for lines like:
+```
+[CameraAdapter] Failed to load driver 'gphoto2': <error>
+[CameraAdapter] Attempting fallback driver: gphoto2-legacy
+```
 
 ### Camera not detected
 
