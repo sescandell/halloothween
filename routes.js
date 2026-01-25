@@ -1,7 +1,7 @@
 var InMemoryStore = require('./utils/InMemoryStore');
 var AzureStreamingClient = require('./utils/AzureStreamingClient');
 var azureConfig = require('./azure-config');
-var GPhoto = require('gphoto2');
+var CameraAdapter = require('./utils/CameraAdapter');
 var fs = require('fs');
 var imageMagick = require('imagemagick');
 var PICTURES_DIR = __dirname + '/public/pictures/';
@@ -88,7 +88,7 @@ if (azureConfig.enabled) {
 // }
 
 // killall  PTPCamera
-var gphoto = new GPhoto.GPhoto2();
+var gphoto = new CameraAdapter();
 var camera = undefined;
 function initCamera() {
     console.info('Chargement des caméras');
