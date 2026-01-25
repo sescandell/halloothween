@@ -196,18 +196,23 @@ export default async function(app,io) {
 
                 const pictureName = Date.now() + '.jpg';
                 
-                // Sauvegarder l'image originale avec fs.promises
-                await fs.promises.writeFile(PICTURES_DIR + pictureName, pictureData);
+                // Convertir l'image avec Sharp (gère tous les formats automatiquement)
+                // et sauvegarder en JPEG de haute qualité
+                console.info('Conversion et sauvegarde de l\'image originale...');
+                await sharp(pictureData)
+                    .jpeg({ quality: 95, progressive: true })
+                    .toFile(PICTURES_DIR + pictureName);
                 
+                console.info('Image originale sauvegardée');
                 picturesStore.add(pictureName);
                 nspSocket.emit('picture', pictureName);
                 
-                // Redimensionnements en parallèle avec Sharp
+                // Redimensionnements en parallèle avec Sharp (depuis le buffer original)
                 console.info('Redimensionnements en cours ...');
                 
                 await Promise.all([
                     // Thumbnail 158px
-                    sharp(PICTURES_DIR + pictureName)
+                    sharp(pictureData)
                         .resize(158, null, { fit: 'inside', withoutEnlargement: true })
                         .jpeg({ quality: 90, progressive: true })
                         .toFile(PICTURES_DIR + '../thumbnails/' + pictureName)
@@ -217,7 +222,7 @@ export default async function(app,io) {
                         }),
                     
                     // Display 1024px
-                    sharp(PICTURES_DIR + pictureName)
+                    sharp(pictureData)
                         .resize(1024, null, { fit: 'inside', withoutEnlargement: true })
                         .jpeg({ quality: 90, progressive: true })
                         .toFile(PICTURES_DIR + '../display/' + pictureName)
