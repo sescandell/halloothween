@@ -3,11 +3,11 @@
  * Gère la connexion vers Azure App Service pour le streaming d'images
  */
 
-const io = require('socket.io-client');
-const fs = require('fs');
-const path = require('path');
+import io from 'socket.io-client';
+import fs from 'fs';
+import path from 'path';
 
-class AzureStreamingClient {
+export class AzureStreamingClient {
     constructor(config) {
         this.azureUrl = config.azureUrl;
         this.sharedSecret = config.sharedSecret;
@@ -141,5 +141,3 @@ class AzureStreamingClient {
         this.connected = false;
     }
 }
-
-module.exports = AzureStreamingClient;
