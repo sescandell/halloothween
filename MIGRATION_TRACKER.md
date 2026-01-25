@@ -11,8 +11,8 @@
 
 | Phase | Statut | Durée | Début | Fin |
 |-------|--------|-------|-------|-----|
-| Phase 1 : Préparation | ⬜ À faire | 15 min | - | - |
-| Phase 2 : ES Modules | ⬜ À faire | 2h | - | - |
+| Phase 1 : Préparation | ✅ Terminé | 15 min | 25 jan 2026 | 25 jan 2026 |
+| Phase 2 : ES Modules | ✅ Terminé | 2h | 25 jan 2026 | 25 jan 2026 |
 | Phase 3 : Express 5 | ⬜ À faire | 1h30 | - | - |
 | Phase 4 : Sharp | ⬜ À faire | 1h | - | - |
 | Phase 5 : Dépendances | ⬜ À faire | 30 min | - | - |
@@ -25,30 +25,30 @@
 
 ## 📝 PHASE 1 : Préparation (15 minutes)
 
-**Statut :** ⬜ À faire  
-**Début :** -  
-**Fin :** -
+**Statut :** ✅ Terminé  
+**Début :** 25 janvier 2026  
+**Fin :** 25 janvier 2026
 
 ### Checklist
 
-- [ ] **1.1** Créer branche `migration/modern-stack`
+- [x] **1.1** Créer branche `migration/modern-stack`
   ```bash
   git checkout -b migration/modern-stack
   ```
   
-- [ ] **1.2** Créer commit snapshot
+- [x] **1.2** Créer commit snapshot
   ```bash
   git add .
   git commit -m "chore: snapshot before migration to ES modules + Express 5 + Sharp"
   ```
   
-- [ ] **1.3** Backup package.json
+- [x] **1.3** Backup package.json
   ```bash
   cp package.json package.json.backup
   cp PhotoboothStreamer/package.json PhotoboothStreamer/package.json.backup
   ```
 
-- [ ] **1.4** Documenter versions actuelles
+- [x] **1.4** Documenter versions actuelles
   - Node.js : v25.3.0
   - Express : 4.16.4
   - EJS : 0.8.8
@@ -58,84 +58,87 @@
 ### Notes de Phase 1
 
 ```
-[Ajouter ici les notes, observations, ou problèmes rencontrés]
+✅ Préparation complète
+- Branch créée: migration/modern-stack
+- Snapshot commit: 7f1d428
+- Backups créés avec succès
 ```
 
 ### Checkpoint 1
 
-- [ ] Branche créée et commit initial fait
-- [ ] Backups créés
-- [ ] Prêt à continuer vers Phase 2
+- [x] Branche créée et commit initial fait
+- [x] Backups créés
+- [x] Prêt à continuer vers Phase 2
 
 ---
 
 ## 🔄 PHASE 2 : Migration ES Modules (2 heures)
 
-**Statut :** ⬜ À faire  
-**Début :** -  
-**Fin :** -
+**Statut :** ✅ Terminé  
+**Début :** 25 janvier 2026  
+**Fin :** 25 janvier 2026
 
 ### 2.1 Modification package.json
 
-- [ ] **2.1.1** Ajouter `"type": "module"` au package.json principal
-- [ ] **2.1.2** Ajouter `"type": "module"` au PhotoboothStreamer/package.json
-- [ ] **2.1.3** Ajouter engines Node.js >= 18
-- [ ] **2.1.4** Commit : `git commit -m "chore: enable ES modules in package.json"`
+- [x] **2.1.1** Ajouter `"type": "module"` au package.json principal
+- [x] **2.1.2** Ajouter `"type": "module"` au PhotoboothStreamer/package.json
+- [x] **2.1.3** Ajouter engines Node.js >= 18
+- [x] **2.1.4** Commit : `git commit -m "chore: enable ES modules in package.json"` (ed71e4e)
 
 ### 2.2 Migration des Fichiers (11 fichiers)
 
 #### Fichiers Simples (⚡)
 
-- [ ] **2.2.1** `utils/InMemoryStore.js`
-  - [ ] Convertir prototype → classe ES6
-  - [ ] `module.exports` → `export class InMemoryStore`
-  - [ ] Tester : `node -e "import('./utils/InMemoryStore.js')"`
-  - [ ] Commit : `git commit -m "feat(esm): migrate InMemoryStore to ES6 class"`
+- [x] **2.2.1** `utils/InMemoryStore.js`
+  - [x] Convertir prototype → classe ES6
+  - [x] `module.exports` → `export class InMemoryStore`
+  - [x] Tester : `node -e "import('./utils/InMemoryStore.js')"`
+  - [x] Commit : `git commit -m "feat(esm): migrate InMemoryStore to ES6 class"` (54cbb9c)
   - **Notes :**
   ```
-  
+  ✅ Conversion réussie de prototype à classe ES6
   ```
 
-- [ ] **2.2.2** `azure-config.js`
-  - [ ] Ajouter imports pour `__dirname` :
+- [x] **2.2.2** `azure-config.js`
+  - [x] Ajouter imports pour `__dirname` :
     ```javascript
     import { fileURLToPath } from 'url';
     import { dirname } from 'path';
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
     ```
-  - [ ] `module.exports` → `export default`
-  - [ ] Tester import
-  - [ ] Commit : `git commit -m "feat(esm): migrate azure-config to ES modules"`
+  - [x] `module.exports` → `export default`
+  - [x] Tester import
+  - [x] Commit : `git commit -m "feat(esm): migrate azure-config to ES modules"` (c4654d7)
   - **Notes :**
   ```
-  
+  ✅ __dirname helper ajouté avec succès
   ```
 
-- [ ] **2.2.3** `utils/AzureStreamingClient.js`
-  - [ ] `require()` → `import` (lignes 6-8)
-  - [ ] `module.exports` → `export class AzureStreamingClient`
-  - [ ] Tester import
-  - [ ] Commit : `git commit -m "feat(esm): migrate AzureStreamingClient to ES modules"`
+- [x] **2.2.3** `utils/AzureStreamingClient.js`
+  - [x] `require()` → `import` (lignes 6-8)
+  - [x] `module.exports` → `export class AzureStreamingClient`
+  - [x] Tester import
+  - [x] Commit : `git commit -m "feat(esm): migrate AzureStreamingClient to ES modules"` (2582096)
   - **Notes :**
   ```
-  
+  ✅ Migration directe, pas de complications
   ```
 
-- [ ] **2.2.4** `config.js`
-  - [ ] `require()` → `import`
-  - [ ] `module.exports` → `export default`
-  - [ ] Tester import
-  - [ ] Commit : `git commit -m "feat(esm): migrate config to ES modules"`
+- [x] **2.2.4** `config.js`
+  - [x] `require()` → `import`
+  - [x] `module.exports` → `export default`
+  - [x] Tester import
+  - [x] Commit : `git commit -m "feat(esm): migrate config to ES modules"` (98126d9)
   - **Notes :**
   ```
-  
+  ✅ Import explicite d'EJS ajouté
   ```
 
 #### Fichiers Complexes (⚠️)
 
-- [ ] **2.2.5** `utils/GPhotoCamera.js`
-  - [ ] Remplacer `require('gphoto2')` par dynamic import :
+- [x] **2.2.5** `utils/GPhotoCamera.js`
+  - [x] Remplacer `require('gphoto2')` par dynamic import :
     ```javascript
     let GPhoto = null;
     try {
@@ -145,26 +148,26 @@
         console.warn('[GPHOTO] Module gphoto2 non disponible (normal sur Windows)');
     }
     ```
-  - [ ] `module.exports` → `export class GPhotoCamera`
-  - [ ] Tester import
-  - [ ] Commit : `git commit -m "feat(esm): migrate GPhotoCamera with dynamic import"`
+  - [x] `module.exports` → `export class GPhotoCamera`
+  - [x] Tester import
+  - [x] Commit : `git commit -m "feat(esm): migrate GPhotoCamera with dynamic import"` (c4d06fe)
   - **Notes :**
   ```
-  
+  ✅ Top-level await utilisé pour dynamic import
   ```
 
-- [ ] **2.2.6** `utils/WebcamCamera.js`
-  - [ ] Remplacer `require('node-webcam')` par dynamic import (même pattern)
-  - [ ] `module.exports` → `export class WebcamCamera`
-  - [ ] Tester import
-  - [ ] Commit : `git commit -m "feat(esm): migrate WebcamCamera with dynamic import"`
+- [x] **2.2.6** `utils/WebcamCamera.js`
+  - [x] Remplacer `require('node-webcam')` par dynamic import (même pattern)
+  - [x] `module.exports` → `export class WebcamCamera`
+  - [x] Tester import
+  - [x] Commit : `git commit -m "feat(esm): migrate WebcamCamera with dynamic import"` (300dd55)
   - **Notes :**
   ```
-  
+  ✅ Dynamic import pour node-webcam réussi
   ```
 
-- [ ] **2.2.7** `utils/CameraAdapter.js` - **REFACTORING MAJEUR**
-  - [ ] Transformer classe en fonction factory async :
+- [x] **2.2.7** `utils/CameraAdapter.js` - **REFACTORING MAJEUR**
+  - [x] Transformer classe en fonction factory async :
     ```javascript
     export async function createCameraAdapter() {
         const platform = process.platform;
@@ -182,83 +185,109 @@
         }
     }
     ```
-  - [ ] Supprimer l'ancienne classe
-  - [ ] Tester : `node -e "import('./utils/CameraAdapter.js').then(m => m.createCameraAdapter())"`
-  - [ ] Commit : `git commit -m "refactor(esm): convert CameraAdapter to async factory function"`
+  - [x] Supprimer l'ancienne classe
+  - [x] Tester : `node -e "import('./utils/CameraAdapter.js').then(m => m.createCameraAdapter())"`
+  - [x] Commit : `git commit -m "refactor(esm): convert CameraAdapter to async factory function"` (b08b75c)
   - **Notes :**
   ```
-  
+  ✅ REFACTORING MAJEUR: Classe → Async Factory Function
+  ✅ Change pattern d'utilisation dans tous les fichiers appelants
   ```
 
-- [ ] **2.2.8** `routes.js` - **FICHIER PRINCIPAL (326 lignes)**
-  - [ ] Remplacer tous les `require()` par `import` (lignes 1-6)
-  - [ ] Ajouter helper `__dirname` :
+- [x] **2.2.8** `routes.js` - **FICHIER PRINCIPAL (326 lignes)**
+  - [x] Remplacer tous les `require()` par `import` (lignes 1-6)
+  - [x] Ajouter helper `__dirname` :
     ```javascript
     import { fileURLToPath } from 'url';
     import { dirname } from 'path';
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
     ```
-  - [ ] Changer `var CameraAdapter = require('./utils/CameraAdapter')` → `import { createCameraAdapter } from './utils/CameraAdapter.js'`
-  - [ ] Modifier ligne 91 : `var gphoto = new CameraAdapter()` → `var gphoto = await createCameraAdapter()`
-  - [ ] Rendre `initCamera()` async si nécessaire
-  - [ ] `module.exports = function(app, io)` → `export default function(app, io)`
-  - [ ] Commit : `git commit -m "feat(esm): migrate routes.js to ES modules"`
+  - [x] Changer `var CameraAdapter = require('./utils/CameraAdapter')` → `import { createCameraAdapter } from './utils/CameraAdapter.js'`
+  - [x] Modifier ligne 91 : `var gphoto = new CameraAdapter()` → `var gphoto = await createCameraAdapter()`
+  - [x] Rendre `initCamera()` async si nécessaire
+  - [x] `module.exports = function(app, io)` → `export default async function(app, io)`
+  - [x] Commit : `git commit -m "feat(esm): migrate routes.js to ES modules"` (5b11564)
   - **Notes :**
   ```
-  
+  ✅ Top-level await pour createCameraAdapter
+  ✅ Fonction d'export rendue async
   ```
 
-- [ ] **2.2.9** `server.js`
-  - [ ] Remplacer tous `require()` par `import`
-  - [ ] Ajouter `.js` aux imports locaux : `'./config.js'`, `'./routes.js'`
-  - [ ] Gérer l'import async de routes si nécessaire
-  - [ ] Commit : `git commit -m "feat(esm): migrate server.js to ES modules"`
+- [x] **2.2.9** `server.js`
+  - [x] Remplacer tous `require()` par `import`
+  - [x] Ajouter `.js` aux imports locaux : `'./config.js'`, `'./routes.js'`
+  - [x] Gérer l'import async de routes si nécessaire
+  - [x] Commit : `git commit -m "feat(esm): migrate server.js to ES modules"` (b1e5978)
   - **Notes :**
   ```
-  
+  ✅ Top-level await pour routes() car fonction async
   ```
 
-- [ ] **2.2.10** `PhotoboothStreamer/server.js`
-  - [ ] Remplacer `require()` par `import` (lignes 1-5)
-  - [ ] Tester : `cd PhotoboothStreamer && node server.js`
-  - [ ] Commit : `git commit -m "feat(esm): migrate PhotoboothStreamer to ES modules"`
+- [x] **2.2.10** `PhotoboothStreamer/server.js`
+  - [x] Remplacer `require()` par `import` (lignes 1-5)
+  - [x] Tester : `cd PhotoboothStreamer && node server.js`
+  - [x] Commit : `git commit -m "feat(esm): migrate PhotoboothStreamer to ES modules"` (8064bb3)
   - **Notes :**
   ```
-  
+  ✅ Migration simple, pas d'async nécessaire
   ```
 
-- [ ] **2.2.11** `install-camera-deps.js` → `install-camera-deps.cjs`
-  - [ ] Renommer fichier : `git mv install-camera-deps.js install-camera-deps.cjs`
-  - [ ] Mettre à jour package.json : `"postinstall": "node install-camera-deps.cjs"`
-  - [ ] Commit : `git commit -m "chore: rename install-camera-deps to .cjs for CommonJS compatibility"`
+- [x] **2.2.11** `install-camera-deps.js` → `install-camera-deps.cjs`
+  - [x] Renommer fichier : `git mv install-camera-deps.js install-camera-deps.cjs`
+  - [x] Mettre à jour package.json : `"postinstall": "node install-camera-deps.cjs"`
+  - [x] Commit : `git commit -m "chore: rename install-camera-deps to .cjs for CommonJS compatibility"` (1cf4c1a)
   - **Notes :**
   ```
-  
+  ✅ Gardé en CommonJS car script npm
   ```
 
 ### Checkpoint 2A : Test de Démarrage ES Modules
 
-- [ ] **Test 1 :** `npm start` démarre sans erreur ESM
-- [ ] **Test 2 :** Logs affichent : `[CAMERA] Détection de win32`
-- [ ] **Test 3 :** Logs affichent : `[WEBCAM] Adaptateur webcam initialisé`
-- [ ] **Test 4 :** Serveur écoute sur port 8181
-- [ ] **Test 5 :** Aucune erreur `Cannot use import statement outside a module`
+- [x] **Test 1 :** `npm start` démarre sans erreur ESM
+- [x] **Test 2 :** Logs affichent : `[CAMERA] Détection de win32`
+- [x] **Test 3 :** Logs affichent : `[WEBCAM] Adaptateur webcam initialisé`
+- [x] **Test 4 :** Serveur écoute sur port 8181
+- [x] **Test 5 :** Aucune erreur `Cannot use import statement outside a module`
 
 **Si tests échouent :** Noter le problème ci-dessous et débugger
 
 ```
-[Notes de debugging Checkpoint 2A]
-
-
+✅ TOUS LES TESTS PASSENT!
+Logs de démarrage:
+[AZURE] Initializing Azure Streaming Client...
+[CAMERA] Détection de Windows - Utilisation de la webcam système
+[WEBCAM] Adaptateur webcam initialisé pour Windows
+Chargement des caméras
+Caméra initialisée : Webcam (Windows Development Mode)
+server running at port 8181
+[INFO] Images chargées : 0
 ```
 
 ### Notes de Phase 2
 
 ```
-[Ajouter ici les observations générales, difficultés, solutions trouvées]
+✅ PHASE 2 COMPLÉTÉE AVEC SUCCÈS!
 
+Observations:
+- Top-level await fonctionne parfaitement avec Node.js v25.3.0
+- Pattern async factory function pour CameraAdapter élégant et fonctionnel
+- Aucune erreur ESM rencontrée
+- Migration fluide en 11 fichiers
 
+Commits créés: 11
+- ed71e4e: Enable ES modules in package.json
+- 54cbb9c: Migrate InMemoryStore
+- c4654d7: Migrate azure-config
+- 2582096: Migrate AzureStreamingClient
+- 98126d9: Migrate config
+- c4d06fe: Migrate GPhotoCamera
+- 300dd55: Migrate WebcamCamera
+- b08b75c: Refactor CameraAdapter to async factory
+- 5b11564: Migrate routes.js
+- b1e5978: Migrate server.js
+- 8064bb3: Migrate PhotoboothStreamer/server.js
+- 1cf4c1a: Rename install-camera-deps to .cjs
 ```
 
 ---
