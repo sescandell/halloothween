@@ -3,18 +3,20 @@
  * Utilise libgphoto2 pour contrôler des appareils photo via USB
  */
 
-var GPhoto;
+let GPhoto = null;
+
+// Dynamic import pour gphoto2 (module optionnel)
 try {
-    GPhoto = require('gphoto2');
+    const gphotoModule = await import('gphoto2');
+    GPhoto = gphotoModule.default || gphotoModule.GPhoto2 || gphotoModule;
 } catch (e) {
     console.warn('[GPHOTO] Module gphoto2 non disponible (normal sur Windows)');
-    GPhoto = null;
 }
 
 /**
  * Wrapper autour de gphoto2 qui expose l'API standard
  */
-class GPhotoCamera {
+export class GPhotoCamera {
     constructor() {
         if (!GPhoto) {
             throw new Error('[GPHOTO] gphoto2 module is not available. Cannot use GPhotoCamera on this platform.');
@@ -32,5 +34,3 @@ class GPhotoCamera {
         this.gphoto.list(callback);
     }
 }
-
-module.exports = GPhotoCamera;
