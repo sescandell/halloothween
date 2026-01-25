@@ -1,11 +1,11 @@
-function InMemoryStore(maxSize) {
-    this.maxSize = maxSize;
-    this.items = [];
-    this.size = 0;
-}
+export class InMemoryStore {
+    constructor(maxSize) {
+        this.maxSize = maxSize;
+        this.items = [];
+        this.size = 0;
+    }
 
-InMemoryStore.prototype = {
-    add: function(item) {
+    add(item) {
         this.items.push(item);
         this.size++;
 
@@ -16,16 +16,13 @@ InMemoryStore.prototype = {
         }
 
         return this.size;
-    },
+    }
 
-    get: function(pos) {
+    get(pos) {
         return this.items[pos];
-    },
+    }
 
-    last: function() {
+    last() {
         return this.get(this.size-1);
     }
-};
-
-
-module.exports = InMemoryStore;
+}
