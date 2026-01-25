@@ -11,6 +11,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const PICTURES_DIR = __dirname + '/public/pictures/';
+
+// Mode de capture avec pause du flux vidéo
+const PAUSE_STREAM_MODE = process.env.PAUSE_STREAM_ON_CAPTURE === 'true';
+console.log(`[CONFIG] Pause stream mode: ${PAUSE_STREAM_MODE ? 'ENABLED' : 'DISABLED'}`);
+
 // var OZW = require('openzwave-shared');
 // var zwave = new OZW({
 //     ConsoleOutput: false,
@@ -163,14 +168,21 @@ export default async function(app,io) {
 
     // Initialize a new socket.io application
     var nspSocket = io.of('/socket').on('connection', function (socket) {
-        socket.on('takePicture', async () => {
+        // Fonction de capture photo (extraite pour réutilisation)
+        async function capturePhoto() {
             console.info('Taking picture from camera');
             if (!camera) {
-                return;
+                throw new Error('No camera available');
             }
 
             try {
-                console.info('Taking picture from camera');
+                console.info('Starting camera capture...');
+                
+                // Si mode pause, attendre 1s pour que Windows libère la webcam
+                if (PAUSE_STREAM_MODE) {
+                    console.info('[PAUSE MODE] Waiting 1s for stream release...');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
                 
                 // Promisifier camera.takePicture()
                 const pictureData = await new Promise((resolve, reject) => {
@@ -219,7 +231,57 @@ export default async function(app,io) {
                 
             } catch (error) {
                 console.error('Erreur prise de photo:', error);
+                throw error;
             }
+        }
+
+        socket.on('takePicture', async () => {
+            if (!camera) {
+                return;
+            }
+
+            if (PAUSE_STREAM_MODE) {
+                // Mode pause : demander au frontend d'arrêter le stream
+                console.info('[PAUSE MODE] Requesting stream pause...');
+                socket.emit('requestStreamPause');
+                
+                // Attendre confirmation avec timeout de 5s
+                const streamPausedPromise = new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Stream pause timeout (5s)'));
+                    }, 5000);
+                    
+                    socket.once('streamPaused', () => {
+                        clearTimeout(timeout);
+                        console.info('[PAUSE MODE] Stream paused confirmed');
+                        resolve();
+                    });
+                });
+                
+                try {
+                    await streamPausedPromise;
+                    await capturePhoto();
+                } catch (error) {
+                    console.error('[PAUSE MODE] Error:', error);
+                    socket.emit('captureError', {
+                        message: 'Erreur lors de la capture. Veuillez réessayer.'
+                    });
+                }
+            } else {
+                // Mode direct : capture immédiate
+                try {
+                    await capturePhoto();
+                } catch (error) {
+                    socket.emit('captureError', {
+                        message: 'Erreur lors de la capture. Veuillez réessayer.'
+                    });
+                }
+            }
+        });
+
+        socket.on('streamPaused', function() {
+            // Cet événement est géré par le promise dans takePicture
+            // On le laisse vide car il est déjà écouté avec socket.once
         });
 
         socket.on('triggerFired', function(){
@@ -305,11 +367,17 @@ export default async function(app,io) {
         console.info('Envoi message "connected"');
         socket.emit('connected');
         
-        // Send Azure URL to front if Azure is enabled
+        // Send configuration to frontend (Azure + pause mode)
         if (azureClient && azureConfig.enabled) {
             socket.emit('azure-config', {
                 azureUrl: azureConfig.azureUrl,
-                rpiId: azureConfig.rpiId
+                rpiId: azureConfig.rpiId,
+                pauseStreamMode: PAUSE_STREAM_MODE
+            });
+        } else {
+            // Même sans Azure, envoyer le mode pause
+            socket.emit('azure-config', {
+                pauseStreamMode: PAUSE_STREAM_MODE
             });
         }
     });
