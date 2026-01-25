@@ -1,6 +1,7 @@
 {
   "name": "photobooth-streamer",
   "version": "1.0.0",
+  "type": "module",
   "description": "Azure service for streaming photobooth images via QR code",
   "main": "server.js",
   "scripts": {
@@ -8,10 +9,11 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "socket.io": "^4.7.2",
-    "cors": "^2.8.5",
-    "uuid": "^9.0.0"
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

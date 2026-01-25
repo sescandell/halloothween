@@ -3,9 +3,13 @@
 
     var countdown = undefined;
     
-    // Azure configuration
-    var azureConfig = null;
+    // Application configuration
+    var appConfig = null;
     var qrCache = {}; // Cache for generated QR codes
+    
+    // Stream vidéo (référence globale pour pause/resume)
+    var videoStream = null;
+    var isStreamPaused = false;
 
     // Mise en cache des éléments du DOM
     var $photos = $('.photos');
@@ -18,6 +22,34 @@
     var $video = $('video');
     var $counter = $('.counter');
     var socket = io.connect('/socket');
+
+    // Fonctions de gestion du flux vidéo
+    function pauseStream() {
+        if (videoStream && !isStreamPaused) {
+            console.log('[STREAM] Pausing video stream...');
+            videoStream.getTracks().forEach(track => track.stop());
+            isStreamPaused = true;
+            console.log('[STREAM] Video stream paused');
+        }
+    }
+
+    function resumeStream() {
+        if (isStreamPaused || !videoStream) {
+            console.log('[STREAM] Resuming video stream...');
+            navigator.mediaDevices
+                .getUserMedia({ video: true })
+                .then(function (stream) {
+                    videoStream = stream;
+                    $video[0].srcObject = stream;
+                    isStreamPaused = false;
+                    console.log('[STREAM] Video stream resumed');
+                })
+                .catch(function (error) {
+                    console.error('[STREAM] Error resuming stream:', error);
+                    alert('Erreur lors de la reprise du flux vidéo');
+                });
+        }
+    }
 
     $trigger.on('click', function (e) {
         e.preventDefault();
@@ -56,16 +88,50 @@
         socket.emit('loadPhotos');
     });
 
-    socket.on('azure-config', function (config) {
-        console.log('Azure config received:', config);
-        azureConfig = config;
+    socket.on('app-config', function (config) {
+        console.log('App config received:', config);
+        appConfig = config;
+        
+        if (config.pauseStreamMode) {
+            console.log('[CONFIG] Pause stream mode ENABLED');
+        } else {
+            console.log('[CONFIG] Pause stream mode DISABLED (direct capture)');
+        }
+    });
+
+    // Handler pour demande de pause du stream
+    socket.on('requestStreamPause', function () {
+        console.log('[STREAM] Backend requests stream pause');
+        $counter.html('Préparation...');
+        pauseStream();
+        
+        // Confirmer au backend que le stream est arrêté
+        socket.emit('streamPaused');
+        console.log('[STREAM] Pause confirmation sent to backend');
+    });
+
+    // Handler pour erreur de capture
+    socket.on('captureError', function (data) {
+        console.error('[CAPTURE] Error:', data.message);
+        $counter.hide();
+        $trigger.show();
+        
+        // Redémarrer le stream si nécessaire
+        if (appConfig && appConfig.pauseStreamMode && isStreamPaused) {
+            setTimeout(function() {
+                resumeStream();
+            }, 500);
+        }
+        
+        // alert(data.message);
     });
 
     // Function to generate QR code and display in overlay
     function generateAndShowQR(photoName) {
-        if (!azureConfig) {
-            console.warn('Azure config not available, hiding QR overlay');
+        if (!appConfig.streamerUrl) {
+            console.warn('Streamer config not available, hiding QR overlay');
             $qrOverlay.hide();
+
             return;
         }
 
@@ -74,6 +140,7 @@
             console.log('Using cached QR for:', photoName);
             $qrLoader.hide();
             $qrCode.attr('src', qrCache[photoName]).show();
+
             return;
         }
 
@@ -84,7 +151,7 @@
         $qrCode.hide();
         
         // Generate streaming URL
-        var streamUrl = azureConfig.azureUrl + '/stream/' + photoName + '?rpi=' + azureConfig.rpiId;
+        var streamUrl = appConfig.streamerUrl + '/stream/' + photoName + '?rpi=' + appConfig.rpiId;
         
         try {
             // Create temporary div for QR generation
@@ -150,6 +217,13 @@
             if (!countdown) {
                 $trigger.show();
             }
+            
+            // Redémarrer le stream si mode pause activé et stream arrêté
+            if (appConfig && appConfig.pauseStreamMode && isStreamPaused) {
+                setTimeout(function() {
+                    resumeStream();
+                }, 500);
+            }
         }, 8000);
     });
 
@@ -203,7 +277,9 @@
             .getUserMedia({ video: true })
             .then(function (stream) {
                 console.log("Récupération flux");
+                videoStream = stream; // Stocker la référence globale
                 $video[0].srcObject = stream;
+                isStreamPaused = false;
             })
             .catch(function (error) {
                 alert(error);

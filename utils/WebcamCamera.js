@@ -3,18 +3,20 @@
  * Compatible avec l'API gphoto2 pour le développement sur Windows
  */
 
-var NodeWebcam;
+let NodeWebcam = null;
+
+// Dynamic import pour node-webcam (module optionnel)
 try {
-    NodeWebcam = require('node-webcam');
+    const webcamModule = await import('node-webcam');
+    NodeWebcam = webcamModule.default || webcamModule;
 } catch (e) {
     console.warn('[WEBCAM] Module node-webcam non disponible (normal sur Linux)');
-    NodeWebcam = null;
 }
 
 /**
  * Wrapper qui simule l'API gphoto2 mais utilise la webcam système
  */
-class WebcamCamera {
+export class WebcamCamera {
     constructor() {
         if (!NodeWebcam) {
             throw new Error('[WEBCAM] node-webcam module is not available. Cannot use WebcamCamera on this platform.');
@@ -82,5 +84,3 @@ class WebcamCameraInstance {
         });
     }
 }
-
-module.exports = WebcamCamera;

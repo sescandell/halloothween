@@ -1,10 +1,21 @@
-var InMemoryStore = require('./utils/InMemoryStore');
-var AzureStreamingClient = require('./utils/AzureStreamingClient');
-var azureConfig = require('./azure-config');
-var CameraAdapter = require('./utils/CameraAdapter');
-var fs = require('fs');
-var imageMagick = require('imagemagick');
-var PICTURES_DIR = __dirname + '/public/pictures/';
+import { InMemoryStore } from './utils/InMemoryStore.js';
+import { StreamingClient } from './utils/StreamingClient.js';
+import appConfig from './app-config.js';
+import { createCameraAdapter } from './utils/CameraAdapter.js';
+import fs from 'fs';
+import { smartSharp } from './utils/bmpToSharp.js';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const PICTURES_DIR = __dirname + '/public/pictures/';
+
+// Mode de capture avec pause du flux vidéo
+const PAUSE_STREAM_MODE = process.env.PAUSE_STREAM_ON_CAPTURE === 'true';
+console.log(`[CONFIG] Pause stream mode: ${PAUSE_STREAM_MODE ? 'ENABLED' : 'DISABLED'}`);
+
 // var OZW = require('openzwave-shared');
 // var zwave = new OZW({
 //     ConsoleOutput: false,
@@ -21,21 +32,21 @@ var stripControllerReady = false;
 var lightControllerReady = false;
 var zwaveStarted = false;
 
-// Initialize Azure Streaming Client
-var azureClient = null;
-if (azureConfig.enabled) {
-    console.log('[AZURE] Initializing Azure Streaming Client...');
-    azureClient = new AzureStreamingClient({
-        azureUrl: azureConfig.azureUrl,
-        sharedSecret: azureConfig.sharedSecret,
-        rpiId: azureConfig.rpiId,
+// Initialize Streaming Client
+var streamingClient = null;
+if (appConfig.streamer.enabled) {
+    console.log('[STREAMER] Initializing Streaming Client...');
+    streamingClient = new StreamingClient({
+        streamerUrl: appConfig.streamer.url,
+        sharedSecret: appConfig.streamer.sharedSecret,
+        rpiId: appConfig.rpiId,
         picturesDir: PICTURES_DIR
     });
     
-    // Connect to Azure (with retry logic)
-    azureClient.connect();
+    // Connect to Streamer (with retry logic)
+    streamingClient.connect();
 } else {
-    console.log('[AZURE] Azure streaming disabled');
+    console.log('[STREAMER] Streaming disabled');
 }
 
 // zwave.on('connected', function(homeId) {
@@ -88,9 +99,9 @@ if (azureConfig.enabled) {
 // }
 
 // killall  PTPCamera
-var gphoto = new CameraAdapter();
+var gphoto = await createCameraAdapter();
 var camera = undefined;
-function initCamera() {
+async function initCamera() {
     console.info('Chargement des caméras');
 
     gphoto.list(function(cameras){
@@ -104,8 +115,8 @@ function initCamera() {
     });
 }
 
-module.exports = function(app,io) {    
-    initCamera();
+export default async function(app,io) {    
+    await initCamera();
 
     // Storage in-memory des photos précédentes
     var picturesStore = new InMemoryStore(100);
@@ -157,79 +168,124 @@ module.exports = function(app,io) {
 
     // Initialize a new socket.io application
     var nspSocket = io.of('/socket').on('connection', function (socket) {
-        socket.on('takePicture',function(){
+        // Fonction de capture photo (extraite pour réutilisation)
+        async function capturePhoto() {
             console.info('Taking picture from camera');
             if (!camera) {
-                return;
+                throw new Error('No camera available');
             }
 
-            console.info('Taking picture from camera');
-            camera.takePicture({
-                download: true
-            }, function (er, pictureData) {
-                if (er) {
-                    console.error('Erreur prise de photo : %o', er);
-
-                    return;
+            try {
+                console.info('Starting camera capture...');
+                
+                // Si mode pause, attendre 1s pour que Windows libère la webcam
+                if (PAUSE_STREAM_MODE) {
+                    console.info('[PAUSE MODE] Waiting 1s for stream release...');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
+                
+                // Promisifier camera.takePicture()
+                const pictureData = await new Promise((resolve, reject) => {
+                    camera.takePicture({
+                        download: true
+                    }, (er, data) => {
+                        if (er) reject(er);
+                        else resolve(data);
+                    });
+                });
 
-                var pictureName = Date.now()+'.jpg';
-                try {
-                    fs.writeFileSync(PICTURES_DIR+pictureName, pictureData);
-                } catch(e) {
-                    console.error("Erreur save photo => " + e);
-                    console.error(PICTURES_DIR+pictureName);
-
-                    return;
-                }
+                const pictureName = Date.now() + '.jpg';
+                
+                // Auto-detect BMP and convert if needed, otherwise use Sharp directly
+                const sharpInstance = smartSharp(pictureData);
+                
+                // Save original image as JPEG
+                await sharpInstance
+                    .clone()
+                    .jpeg({ quality: 95, progressive: true })
+                    .toFile(PICTURES_DIR + pictureName);
                 
                 picturesStore.add(pictureName);
                 nspSocket.emit('picture', pictureName);
                 
-                //*
-                console.info('Redimensionnements en cours ...');
-                try{
-                    imageMagick.resize({
-                        srcPath: PICTURES_DIR+pictureName,
-                        dstPath: PICTURES_DIR+'../thumbnails/'+pictureName,
-                        width: 158
-                    }, function(err, stdout, stderr){
-                        if (err) {
-                            console.error(
-                                'Error resizing file %s to %s',
-                                PICTURES_DIR+pictureName,
-                                PICTURES_DIR+'../thumbnails/'+pictureName
-                            );
-                            console.error("\t%o", err);
+                // Generate thumbnail and display versions in parallel
+                await Promise.all([
+                    // Thumbnail 158px
+                    sharpInstance
+                        .clone()
+                        .resize(158, null, { fit: 'inside', withoutEnlargement: true })
+                        .jpeg({ quality: 90, progressive: true })
+                        .toFile(PICTURES_DIR + '../thumbnails/' + pictureName)
+                        .then(() => {
+                            nspSocket.emit('picture-thumbnail', pictureName);
+                        }),
+                    
+                    // Display 1024px
+                    sharpInstance
+                        .clone()
+                        .resize(1024, null, { fit: 'inside', withoutEnlargement: true })
+                        .jpeg({ quality: 90, progressive: true })
+                        .toFile(PICTURES_DIR + '../display/' + pictureName)
+                        .then(() => {
+                            nspSocket.emit('picture-display', pictureName);
+                        })
+                ]);
+                
+                console.info('[IMAGE] Photo processing complete:', pictureName);
+                
+            } catch (error) {
+                console.error('Erreur prise de photo:', error);
+                throw error;
+            }
+        }
 
-                            return;
-                        }
-                        console.info("\tThumbnail fait !");
-                        nspSocket.emit('picture-thumbnail', pictureName);
-                    });
-                    imageMagick.resize({
-                        srcPath: PICTURES_DIR+pictureName,
-                        dstPath: PICTURES_DIR+'../display/'+pictureName,
-                        width: 1024
-                    }, function(err, stdout, stderr){
-                        if (err) {
-                            console.error(
-                                'Error resizing display file %s to %s',
-                                PICTURES_DIR+pictureName,
-                                PICTURES_DIR+'../display/'+pictureName
-                            );
-                            console.error("\t%o", err);
+        socket.on('takePicture', async () => {
+            console.info(`[DEBUG] takePicture called for socket ${socket.id}`);
+            if (!camera) {
+                return;
+            }
 
-                            return;
-                        }
-                        console.info("\tDisplay fait !");
-                        nspSocket.emit('picture-display', pictureName);
+            if (PAUSE_STREAM_MODE) {
+                // Attendre confirmation avec timeout de 5s
+                // IMPORTANT: Enregistrer le listener AVANT d'émettre la requête
+                const streamPausedPromise = new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Stream pause timeout (5s)'));
+                    }, 5000);
+                    
+                    const handler = () => {
+                        clearTimeout(timeout);
+                        console.info('[PAUSE MODE] Stream paused confirmed');
+                        resolve();
+                    };
+                    
+                    // Enregistrer le listener AVANT d'émettre
+                    socket.once('streamPaused', handler);
+                    
+                    // Maintenant on peut émettre la requête en toute sécurité
+                    console.info('[PAUSE MODE] Requesting stream pause...');
+                    socket.emit('requestStreamPause');
+                });
+                
+                try {
+                    await streamPausedPromise;
+                    await capturePhoto();
+                } catch (error) {
+                    console.error('[PAUSE MODE] Error:', error);
+                    socket.emit('captureError', {
+                        message: 'Erreur lors de la capture. Veuillez réessayer.'
                     });
-                } catch(e) {
-                    console.error('Erreur %o', e);
                 }
-                // */
-            });
+            } else {
+                // Mode direct : capture immédiate
+                try {
+                    await capturePhoto();
+                } catch (error) {
+                    socket.emit('captureError', {
+                        message: 'Erreur lors de la capture. Veuillez réessayer.'
+                    });
+                }
+            }
         });
 
         socket.on('triggerFired', function(){
@@ -315,12 +371,15 @@ module.exports = function(app,io) {
         console.info('Envoi message "connected"');
         socket.emit('connected');
         
-        // Send Azure URL to front if Azure is enabled
-        if (azureClient && azureConfig.enabled) {
-            socket.emit('azure-config', {
-                azureUrl: azureConfig.azureUrl,
-                rpiId: azureConfig.rpiId
-            });
+        // Send configuration to frontend
+        const appConfigForClient = {
+            rpiId: appConfig.rpiId,
+            pauseStreamMode: PAUSE_STREAM_MODE
+        };
+
+        if (streamingClient && appConfig.streamer.enabled) {
+            appConfigForClient.streamerUrl = appConfig.streamer.url;
         }
+        socket.emit('app-config', appConfigForClient);
     });
 };

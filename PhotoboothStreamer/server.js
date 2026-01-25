@@ -1,8 +1,9 @@
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-const cors = require('cors');
-const { v4: uuidv4 } = require('uuid');
+import 'dotenv/config';
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
+import { v4 as uuidv4 } from 'uuid';
 
 const app = express();
 const server = http.createServer(app);
@@ -12,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // Socket.IO configuration avec support des gros fichiers
-const io = socketIo(server, {
+const io = new Server(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
@@ -24,7 +25,7 @@ const io = socketIo(server, {
 
 // Configuration
 const PORT = process.env.PORT || 3000;
-const SHARED_SECRET = process.env.SHARED_SECRET;
+const SHARED_SECRET = process.env.SHARED_SECRET || '';
 
 // Storage pour les connexions et requêtes en cours
 const connectedRPIs = new Map(); // RPI connections
@@ -205,7 +206,11 @@ app.get('/stream/:photoId', async (req, res) => {
 });
 
 // Start server
-server.listen(PORT, () => {
+server.listen(PORT, (error) => {
+  if (error) {
+    console.error('[ERROR] Failed to start PhotoboothStreamer server:', error);
+    process.exit(1);
+  }
   console.log(`🌐 PhotoboothStreamer listening on port ${PORT}`);
   console.log(`🔗 Stream endpoint: http://localhost:${PORT}/stream/{photoId}`);
   console.log(`🏥 Health check: http://localhost:${PORT}/health`);

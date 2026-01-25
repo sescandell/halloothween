@@ -19,3 +19,4 @@ public/display/*
 !public/pictures/.keep
 !public/thumbnails/.keep
 !public/display/.keep
+.env
