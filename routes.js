@@ -241,26 +241,31 @@ export default async function(app,io) {
         }
 
         socket.on('takePicture', async () => {
+            console.info(`[DEBUG] takePicture called for socket ${socket.id}`);
             if (!camera) {
                 return;
             }
 
             if (PAUSE_STREAM_MODE) {
-                // Mode pause : demander au frontend d'arrêter le stream
-                console.info('[PAUSE MODE] Requesting stream pause...');
-                socket.emit('requestStreamPause');
-                
                 // Attendre confirmation avec timeout de 5s
+                // IMPORTANT: Enregistrer le listener AVANT d'émettre la requête
                 const streamPausedPromise = new Promise((resolve, reject) => {
                     const timeout = setTimeout(() => {
                         reject(new Error('Stream pause timeout (5s)'));
                     }, 5000);
                     
-                    socket.once('streamPaused', () => {
+                    const handler = () => {
                         clearTimeout(timeout);
                         console.info('[PAUSE MODE] Stream paused confirmed');
                         resolve();
-                    });
+                    };
+                    
+                    // Enregistrer le listener AVANT d'émettre
+                    socket.once('streamPaused', handler);
+                    
+                    // Maintenant on peut émettre la requête en toute sécurité
+                    console.info('[PAUSE MODE] Requesting stream pause...');
+                    socket.emit('requestStreamPause');
                 });
                 
                 try {
@@ -282,11 +287,6 @@ export default async function(app,io) {
                     });
                 }
             }
-        });
-
-        socket.on('streamPaused', function() {
-            // Cet événement est géré par le promise dans takePicture
-            // On le laisse vide car il est déjà écouté avec socket.once
         });
 
         socket.on('triggerFired', function(){
