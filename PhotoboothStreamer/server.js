@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import http from 'http';
-import socketIo from 'socket.io';
+import { Server } from 'socket.io';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // Socket.IO configuration avec support des gros fichiers
-const io = socketIo(server, {
+const io = new Server(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
