@@ -1,10 +1,16 @@
-var InMemoryStore = require('./utils/InMemoryStore');
-var AzureStreamingClient = require('./utils/AzureStreamingClient');
-var azureConfig = require('./azure-config');
-var CameraAdapter = require('./utils/CameraAdapter');
-var fs = require('fs');
-var imageMagick = require('imagemagick');
-var PICTURES_DIR = __dirname + '/public/pictures/';
+import { InMemoryStore } from './utils/InMemoryStore.js';
+import { AzureStreamingClient } from './utils/AzureStreamingClient.js';
+import azureConfig from './azure-config.js';
+import { createCameraAdapter } from './utils/CameraAdapter.js';
+import fs from 'fs';
+import imageMagick from 'imagemagick';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const PICTURES_DIR = __dirname + '/public/pictures/';
 // var OZW = require('openzwave-shared');
 // var zwave = new OZW({
 //     ConsoleOutput: false,
@@ -88,9 +94,9 @@ if (azureConfig.enabled) {
 // }
 
 // killall  PTPCamera
-var gphoto = new CameraAdapter();
+var gphoto = await createCameraAdapter();
 var camera = undefined;
-function initCamera() {
+async function initCamera() {
     console.info('Chargement des caméras');
 
     gphoto.list(function(cameras){
@@ -104,8 +110,8 @@ function initCamera() {
     });
 }
 
-module.exports = function(app,io) {    
-    initCamera();
+export default async function(app,io) {    
+    await initCamera();
 
     // Storage in-memory des photos précédentes
     var picturesStore = new InMemoryStore(100);
