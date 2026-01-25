@@ -1,8 +1,8 @@
-const express = require('express');
-const http = require('http');
-const socketIo = require('socket.io');
-const cors = require('cors');
-const { v4: uuidv4 } = require('uuid');
+import express from 'express';
+import http from 'http';
+import socketIo from 'socket.io';
+import cors from 'cors';
+import { v4 as uuidv4 } from 'uuid';
 
 const app = express();
 const server = http.createServer(app);
