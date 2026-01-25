@@ -20,7 +20,7 @@
     "node-webcam": "^0.8.1"
   },
   "scripts": {
-    "postinstall": "node install-camera-deps.js",
+    "postinstall": "node install-camera-deps.cjs",
     "debug": "node debug server.js",
     "start": "node server.js"
   },
