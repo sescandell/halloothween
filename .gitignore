@@ -16,7 +16,9 @@ nbproject
 public/pictures/*
 public/thumbnails/*
 public/display/*
+public/print/*
 !public/pictures/.keep
 !public/thumbnails/.keep
 !public/display/.keep
+!public/print/README.md
 .env

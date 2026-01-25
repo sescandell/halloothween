@@ -1,5 +1,6 @@
 import { InMemoryStore } from './utils/InMemoryStore.js';
 import { StreamingClient } from './utils/StreamingClient.js';
+import { PrinterClient } from './utils/PrinterClient.js';
 import appConfig from './app-config.js';
 import { createCameraAdapter } from './utils/CameraAdapter.js';
 import fs from 'fs';
@@ -47,6 +48,21 @@ if (appConfig.streamer.enabled) {
     streamingClient.connect();
 } else {
     console.log('[STREAMER] Streaming disabled');
+}
+
+// Initialize Printer Client
+var printerClient = null;
+if (appConfig.printer.enabled) {
+    console.log('[PRINTER] Initializing Printer Client...');
+    printerClient = new PrinterClient({
+        enabled: appConfig.printer.enabled,
+        name: appConfig.printer.name,
+        mode: appConfig.printer.mode
+    });
+    
+    // Initialize will be called in the async function below
+} else {
+    console.log('[PRINTER] Printing disabled');
 }
 
 // zwave.on('connected', function(homeId) {
@@ -128,6 +144,11 @@ async function initCamera() {
 
 export default async function(app,io) {    
     await initCamera();
+    
+    // Initialize Printer Client (async operation)
+    if (printerClient) {
+        await printerClient.initialize();
+    }
 
     // Storage in-memory des photos précédentes
     var picturesStore = new InMemoryStore(100);
@@ -372,6 +393,30 @@ export default async function(app,io) {
 
         socket.on('initCamera', initCamera);
 
+        // Print photo event
+        socket.on('printPhoto', async (data) => {
+            const { photoId } = data;
+            console.log(`[PRINTER] Print request for: ${photoId}`);
+            
+            if (!printerClient || !printerClient.isAvailable()) {
+                socket.emit('printError', { 
+                    message: 'Imprimante non disponible' 
+                });
+                return;
+            }
+            
+            try {
+                const photoPath = PICTURES_DIR + photoId;
+                await printerClient.printPhoto(photoPath);
+                socket.emit('printSuccess', { photoId });
+            } catch (error) {
+                console.error('[PRINTER] Error:', error);
+                socket.emit('printError', { 
+                    message: 'Erreur lors de l\'impression: ' + error.message 
+                });
+            }
+        });
+
         nspSocket.emit('cry');
 
         console.info('Envoi message "connected"');
@@ -386,6 +431,9 @@ export default async function(app,io) {
         if (streamingClient && appConfig.streamer.enabled) {
             appConfigForClient.streamerUrl = appConfig.streamer.url;
         }
+        
+        appConfigForClient.printerEnabled = appConfig.printer.enabled && printerClient && printerClient.isAvailable();
+        
         socket.emit('app-config', appConfigForClient);
     });
 };
