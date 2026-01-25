@@ -56,13 +56,13 @@ export function sharpFromBMP(bmpBuffer) {
  * Returns Sharp instance regardless of input format (BMP, JPEG, PNG, etc.)
  * 
  * @param {Buffer} imageBuffer - Image buffer (any format)
- * @returns {Sharp} - Sharp instance
+ * @returns {sharp.Sharp} - Sharp instance
  */
 export function smartSharp(imageBuffer) {
     if (isBMP(imageBuffer)) {
         console.info('[IMAGE] BMP format detected, converting to Sharp-compatible format');
         return sharpFromBMP(imageBuffer);
-    } else {
-        return sharp(imageBuffer);
-    }
+    } 
+    
+    return sharp(imageBuffer);
 }

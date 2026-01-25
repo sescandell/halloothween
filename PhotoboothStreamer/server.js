@@ -25,7 +25,7 @@ const io = new Server(server, {
 
 // Configuration
 const PORT = process.env.PORT || 3000;
-const SHARED_SECRET = process.env.SHARED_SECRET;
+const SHARED_SECRET = process.env.SHARED_SECRET || '';
 
 // Storage pour les connexions et requêtes en cours
 const connectedRPIs = new Map(); // RPI connections

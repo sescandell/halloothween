@@ -158,8 +158,8 @@ Open your browser and navigate to:
 halloothween/
 ├── server.js                 # Main server (Express 5 + Socket.IO)
 ├── routes.js                 # HTTP routes and Socket.IO handlers
-├── config.js                 # Application configuration
-├── azure-config.js           # Azure streaming configuration
+├── config.js                 # Runtime Application configuration
+├── app-config.js             # Application configuration factory
 ├── .env                      # Environment variables (create from .env.example)
 ├── utils/
 │   ├── CameraAdapter.js      # Async factory for camera selection

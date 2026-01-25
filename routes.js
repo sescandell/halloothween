@@ -1,9 +1,8 @@
 import { InMemoryStore } from './utils/InMemoryStore.js';
-import { AzureStreamingClient } from './utils/AzureStreamingClient.js';
-import azureConfig from './azure-config.js';
+import { StreamingClient } from './utils/StreamingClient.js';
+import appConfig from './app-config.js';
 import { createCameraAdapter } from './utils/CameraAdapter.js';
 import fs from 'fs';
-import sharp from 'sharp';
 import { smartSharp } from './utils/bmpToSharp.js';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -33,21 +32,21 @@ var stripControllerReady = false;
 var lightControllerReady = false;
 var zwaveStarted = false;
 
-// Initialize Azure Streaming Client
-var azureClient = null;
-if (azureConfig.enabled) {
-    console.log('[AZURE] Initializing Azure Streaming Client...');
-    azureClient = new AzureStreamingClient({
-        azureUrl: azureConfig.azureUrl,
-        sharedSecret: azureConfig.sharedSecret,
-        rpiId: azureConfig.rpiId,
+// Initialize Streaming Client
+var streamingClient = null;
+if (appConfig.streamer.enabled) {
+    console.log('[STREAMER] Initializing Streaming Client...');
+    streamingClient = new StreamingClient({
+        streamerUrl: appConfig.streamer.url,
+        sharedSecret: appConfig.streamer.sharedSecret,
+        rpiId: appConfig.rpiId,
         picturesDir: PICTURES_DIR
     });
     
-    // Connect to Azure (with retry logic)
-    azureClient.connect();
+    // Connect to Streamer (with retry logic)
+    streamingClient.connect();
 } else {
-    console.log('[AZURE] Azure streaming disabled');
+    console.log('[STREAMER] Streaming disabled');
 }
 
 // zwave.on('connected', function(homeId) {
@@ -372,18 +371,15 @@ export default async function(app,io) {
         console.info('Envoi message "connected"');
         socket.emit('connected');
         
-        // Send configuration to frontend (Azure + pause mode)
-        if (azureClient && azureConfig.enabled) {
-            socket.emit('azure-config', {
-                azureUrl: azureConfig.azureUrl,
-                rpiId: azureConfig.rpiId,
-                pauseStreamMode: PAUSE_STREAM_MODE
-            });
-        } else {
-            // Même sans Azure, envoyer le mode pause
-            socket.emit('azure-config', {
-                pauseStreamMode: PAUSE_STREAM_MODE
-            });
+        // Send configuration to frontend
+        const appConfigForClient = {
+            rpiId: appConfig.rpiId,
+            pauseStreamMode: PAUSE_STREAM_MODE
+        };
+
+        if (streamingClient && appConfig.streamer.enabled) {
+            appConfigForClient.streamerUrl = appConfig.streamer.url;
         }
+        socket.emit('app-config', appConfigForClient);
     });
 };

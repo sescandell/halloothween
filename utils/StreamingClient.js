@@ -1,15 +1,15 @@
 /**
- * Azure Streaming Client
- * Gère la connexion vers Azure App Service pour le streaming d'images
+ * Streaming Client
+ * Gère la connexion vers un service de streaming pour le streaming d'images
  */
 
 import io from 'socket.io-client';
 import fs from 'fs';
 import path from 'path';
 
-export class AzureStreamingClient {
+export class StreamingClient {
     constructor(config) {
-        this.azureUrl = config.azureUrl;
+        this.streamerUrl = config.streamerUrl;
         this.sharedSecret = config.sharedSecret;
         this.rpiId = config.rpiId || 'rpi-' + Date.now();
         this.picturesDir = config.picturesDir;
@@ -18,20 +18,20 @@ export class AzureStreamingClient {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         
-        console.log(`[AZURE] Initializing client for RPI: ${this.rpiId}`);
+        console.log(`[STREAMER] Initializing client for RPI: ${this.rpiId}`);
     }
 
     /**
-     * Connect to Azure App Service
+     * Connect to Streaming Service
      */
     connect() {
         if (this.socket) {
             this.socket.disconnect();
         }
 
-        console.log(`[AZURE] Connecting to ${this.azureUrl}...`);
+        console.log(`[STREAMER] Connecting to ${this.streamerUrl}...`);
         
-        this.socket = io(this.azureUrl, {
+        this.socket = io(this.streamerUrl, {
             auth: {
                 token: this.sharedSecret
             },
@@ -51,7 +51,7 @@ export class AzureStreamingClient {
      */
     setupEventHandlers() {
         this.socket.on('connect', () => {
-            console.log(`[AZURE] Connected to Azure service`);
+            console.log(`[STREAMER] Connected to streaming service`);
             this.connected = true;
             this.reconnectAttempts = 0;
             
@@ -60,40 +60,40 @@ export class AzureStreamingClient {
         });
 
         this.socket.on('registration-confirmed', (data) => {
-            console.log(`[AZURE] RPI registration confirmed: ${data.rpiId}`);
+            console.log(`[STREAMER] RPI registration confirmed: ${data.rpiId}`);
         });
 
         this.socket.on('request-photo', (data) => {
             const { requestId, photoId } = data;
-            console.log(`[AZURE] Photo requested: ${photoId} (request: ${requestId})`);
+            console.log(`[STREAMER] Photo requested: ${photoId} (request: ${requestId})`);
             
-            this.sendPhotoToAzure(requestId, photoId);
+            this.sendPhoto(requestId, photoId);
         });
 
         this.socket.on('disconnect', (reason) => {
-            console.log(`[AZURE] Disconnected: ${reason}`);
+            console.log(`[STREAMER] Disconnected: ${reason}`);
             this.connected = false;
         });
 
         this.socket.on('connect_error', (error) => {
-            console.error(`[AZURE] Connection error:`, error.message);
+            console.error(`[STREAMER] Connection error:`, error.message);
             this.reconnectAttempts++;
             
             if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-                console.error(`[AZURE] Max reconnection attempts reached. Giving up.`);
+                console.error(`[STREAMER] Max reconnection attempts reached. Giving up.`);
             }
         });
     }
 
     /**
-     * Send photo to Azure in response to a request
+     * Send photo to Streaming Service in response to a request
      */
-    async sendPhotoToAzure(requestId, photoId) {
+    async sendPhoto(requestId, photoId) {
         try {
             const photoPath = path.join(this.picturesDir, photoId);
             
             if (!fs.existsSync(photoPath)) {
-                console.error(`[AZURE] Photo not found: ${photoPath}`);
+                console.error(`[STREAMER] Photo not found: ${photoPath}`);
                 this.socket.emit('photo-error', {
                     requestId,
                     error: `Photo ${photoId} not found`
@@ -105,7 +105,7 @@ export class AzureStreamingClient {
             const photoBuffer = fs.readFileSync(photoPath);
             const photoData = photoBuffer.toString('base64');
             
-            console.log(`[AZURE] Sending photo ${photoId} (${photoBuffer.length} bytes)`);
+            console.log(`[STREAMER] Sending photo ${photoId} (${photoBuffer.length} bytes)`);
             
             this.socket.emit('photo-data', {
                 requestId,
@@ -115,7 +115,7 @@ export class AzureStreamingClient {
             });
             
         } catch (error) {
-            console.error(`[AZURE] Error sending photo ${photoId}:`, error);
+            console.error(`[STREAMER] Error sending photo ${photoId}:`, error);
             this.socket.emit('photo-error', {
                 requestId,
                 error: error.message
@@ -124,14 +124,14 @@ export class AzureStreamingClient {
     }
 
     /**
-     * Check if connected to Azure
+     * Check if connected to Streaming Service
      */
     isConnected() {
         return this.connected && this.socket && this.socket.connected;
     }
 
     /**
-     * Disconnect from Azure
+     * Disconnect from Streaming Service
      */
     disconnect() {
         if (this.socket) {
