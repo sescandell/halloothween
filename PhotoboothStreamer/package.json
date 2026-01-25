@@ -1,6 +1,7 @@
 {
   "name": "photobooth-streamer",
   "version": "1.0.0",
+  "type": "module",
   "description": "Azure service for streaming photobooth images via QR code",
   "main": "server.js",
   "scripts": {

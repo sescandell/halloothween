@@ -2,7 +2,11 @@
   "name": "project",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "keywords": [],
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "cors": "2.7.1",
     "ejs": "~0.8.5",
