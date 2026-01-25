@@ -3,7 +3,7 @@ import { AzureStreamingClient } from './utils/AzureStreamingClient.js';
 import azureConfig from './azure-config.js';
 import { createCameraAdapter } from './utils/CameraAdapter.js';
 import fs from 'fs';
-import imageMagick from 'imagemagick';
+import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -163,79 +163,63 @@ export default async function(app,io) {
 
     // Initialize a new socket.io application
     var nspSocket = io.of('/socket').on('connection', function (socket) {
-        socket.on('takePicture',function(){
+        socket.on('takePicture', async () => {
             console.info('Taking picture from camera');
             if (!camera) {
                 return;
             }
 
-            console.info('Taking picture from camera');
-            camera.takePicture({
-                download: true
-            }, function (er, pictureData) {
-                if (er) {
-                    console.error('Erreur prise de photo : %o', er);
+            try {
+                console.info('Taking picture from camera');
+                
+                // Promisifier camera.takePicture()
+                const pictureData = await new Promise((resolve, reject) => {
+                    camera.takePicture({
+                        download: true
+                    }, (er, data) => {
+                        if (er) reject(er);
+                        else resolve(data);
+                    });
+                });
 
-                    return;
-                }
-
-                var pictureName = Date.now()+'.jpg';
-                try {
-                    fs.writeFileSync(PICTURES_DIR+pictureName, pictureData);
-                } catch(e) {
-                    console.error("Erreur save photo => " + e);
-                    console.error(PICTURES_DIR+pictureName);
-
-                    return;
-                }
+                const pictureName = Date.now() + '.jpg';
+                
+                // Sauvegarder l'image originale avec fs.promises
+                await fs.promises.writeFile(PICTURES_DIR + pictureName, pictureData);
                 
                 picturesStore.add(pictureName);
                 nspSocket.emit('picture', pictureName);
                 
-                //*
+                // Redimensionnements en parallèle avec Sharp
                 console.info('Redimensionnements en cours ...');
-                try{
-                    imageMagick.resize({
-                        srcPath: PICTURES_DIR+pictureName,
-                        dstPath: PICTURES_DIR+'../thumbnails/'+pictureName,
-                        width: 158
-                    }, function(err, stdout, stderr){
-                        if (err) {
-                            console.error(
-                                'Error resizing file %s to %s',
-                                PICTURES_DIR+pictureName,
-                                PICTURES_DIR+'../thumbnails/'+pictureName
-                            );
-                            console.error("\t%o", err);
-
-                            return;
-                        }
-                        console.info("\tThumbnail fait !");
-                        nspSocket.emit('picture-thumbnail', pictureName);
-                    });
-                    imageMagick.resize({
-                        srcPath: PICTURES_DIR+pictureName,
-                        dstPath: PICTURES_DIR+'../display/'+pictureName,
-                        width: 1024
-                    }, function(err, stdout, stderr){
-                        if (err) {
-                            console.error(
-                                'Error resizing display file %s to %s',
-                                PICTURES_DIR+pictureName,
-                                PICTURES_DIR+'../display/'+pictureName
-                            );
-                            console.error("\t%o", err);
-
-                            return;
-                        }
-                        console.info("\tDisplay fait !");
-                        nspSocket.emit('picture-display', pictureName);
-                    });
-                } catch(e) {
-                    console.error('Erreur %o', e);
-                }
-                // */
-            });
+                
+                await Promise.all([
+                    // Thumbnail 158px
+                    sharp(PICTURES_DIR + pictureName)
+                        .resize(158, null, { fit: 'inside', withoutEnlargement: true })
+                        .jpeg({ quality: 90, progressive: true })
+                        .toFile(PICTURES_DIR + '../thumbnails/' + pictureName)
+                        .then(() => {
+                            console.info("\tThumbnail fait !");
+                            nspSocket.emit('picture-thumbnail', pictureName);
+                        }),
+                    
+                    // Display 1024px
+                    sharp(PICTURES_DIR + pictureName)
+                        .resize(1024, null, { fit: 'inside', withoutEnlargement: true })
+                        .jpeg({ quality: 90, progressive: true })
+                        .toFile(PICTURES_DIR + '../display/' + pictureName)
+                        .then(() => {
+                            console.info("\tDisplay fait !");
+                            nspSocket.emit('picture-display', pictureName);
+                        })
+                ]);
+                
+                console.info('Redimensionnements terminés avec succès');
+                
+            } catch (error) {
+                console.error('Erreur prise de photo:', error);
+            }
         });
 
         socket.on('triggerFired', function(){
