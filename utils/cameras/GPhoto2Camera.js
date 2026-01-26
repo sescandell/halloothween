@@ -88,26 +88,6 @@ class GPhoto2CameraInstance {
     }
 
     /**
-     * Obtient le nom de l'événement pour les logs
-     * @param {number} eventType - Type d'événement (numérique)
-     * @returns {string} - Nom de l'événement
-     */
-    _getEventTypeName(eventType) {
-        if (!CameraEventType) return `Type ${eventType}`;
-        
-        const names = {
-            [CameraEventType.Unknown]: 'Unknown',
-            [CameraEventType.Timeout]: 'Timeout',
-            [CameraEventType.FileAdded]: 'FileAdded',
-            [CameraEventType.FolderAdded]: 'FolderAdded',
-            [CameraEventType.CaptureComplete]: 'CaptureComplete',
-            [CameraEventType.FileChanged]: 'FileChanged'
-        };
-        
-        return names[eventType] || `Type ${eventType}`;
-    }
-
-    /**
      * Prend une photo avec la caméra
      * @param {Object} options - Options de capture
      * @returns {Promise<Buffer>} - Buffer de l'image capturée
@@ -131,12 +111,8 @@ class GPhoto2CameraInstance {
                 // Attendre un événement avec timeout de 1000ms par itération
                 cameraEvent = await this.lib.waitForEventAsync(this.cameraInfo, 1000);
                 
-                const eventName = this._getEventTypeName(cameraEvent.type);
-                console.log(`[GPHOTO2] Événement reçu (tentative ${attempts}/${maxAttempts}): ${eventName} (type=${cameraEvent.type})`);
-                
                 // Si l'événement est FileAdded (type === 2), télécharger le fichier
-                if (cameraEvent.type === 2 && cameraEvent.path) {
-                    console.log(`[GPHOTO2] Fichier capturé: ${cameraEvent.path.folder}/${cameraEvent.path.name}`);
+                if (cameraEvent.type === CameraEventType.FileAdded && cameraEvent.path) {
                     
                     // Télécharger le fichier dans un buffer temporaire
                     const tempPath = `/tmp/gphoto2-${Date.now()}.jpg`;
@@ -144,13 +120,11 @@ class GPhoto2CameraInstance {
                     await this.lib.getFileAsync(this.cameraInfo, cameraEvent.path, tempPath);
                     
                     // Lire le fichier
-                    console.log('[GPHOTO2] Lecture du fichier téléchargé...');
                     const data = await fs.readFile(tempPath);
                     console.log(`[GPHOTO2] Fichier lu: ${data.length} octets`);
                     
                     // Nettoyer le fichier temporaire
                     await fs.unlink(tempPath);
-                    console.log('[GPHOTO2] Fichier temporaire nettoyé');
                     
                     console.log('[GPHOTO2] ✓ Capture réussie');
                     return data;
@@ -161,7 +135,7 @@ class GPhoto2CameraInstance {
                     throw new Error(`[GPHOTO2] Timeout après ${maxAttempts} tentatives sans recevoir de fichier`);
                 }
                 
-            } while (cameraEvent.type !== 1); // 1 = Timeout (arrêter si timeout natif)
+            } while (cameraEvent.type !== CameraEventType.Timeout); // Timeout (arrêter si timeout natif)
             
             // Si on sort de la boucle sans avoir reçu de fichier
             throw new Error('[GPHOTO2] Aucun fichier reçu après la capture (événement Timeout reçu)');
