@@ -136,7 +136,9 @@ export class FrameComposer {
             }
 
             const timestamp = Date.now();
-            const framedName = `framed_${timestamp}_${photoName}`;
+            // Force PNG extension
+            const parsedPath = path.parse(photoName);
+            const framedName = `framed_${timestamp}_${parsedPath.name}.png`;
             const framedPath = path.join(framedDir, framedName);
 
             console.log(`[FRAME]    → Compositing frame overlay`);
@@ -146,10 +148,7 @@ export class FrameComposer {
                     top: 0,
                     left: 0
                 }])
-                .jpeg({ 
-                    quality: 100,           // Qualité maximale pour impression
-                    progressive: false      // Baseline pour compatibilité imprimante
-                })
+                .png()
                 .toFile(framedPath);
 
             console.log(`[FRAME] ✓ Composed photo saved: /public/print-framed/${framedName}`);

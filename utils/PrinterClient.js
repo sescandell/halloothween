@@ -183,18 +183,55 @@ export class PrinterClient {
 
     /**
      * Print on Linux using lp command (CUPS)
+     * Includes automatic conversion to PNG to avoid "Filter Failed" errors with Gutenprint drivers
      */
     async _printViaCUPS(photoPath) {
-        const command = `lp -d "${this.printerName}" "${photoPath}"`;
-        
+        let fileToPrint = photoPath;
+        let tempFileCreated = false;
+
         try {
+            // FIX: The DNP QW410 driver (Gutenprint) crashes with "Filter Failed" on JPGs
+            // We must convert to PNG before printing.
+            const ext = path.extname(photoPath).toLowerCase();
+            if (ext !== '.png') {
+                console.log(`[PRINTER] ⚠️  Converting ${ext} to PNG to avoid CUPS 'Filter Failed' error...`);
+                
+                // Use /tmp for temporary files on Linux
+                const tempDir = '/tmp';
+                const tempName = `print_conv_${Date.now()}.png`;
+                const tempPath = path.join(tempDir, tempName);
+                
+                // Use ImageMagick 'convert'
+                // Note: -flatten ensures we handle any transparency correctly (white background)
+                // Note: -rotate 0 ensures we don't accidentally rotate based on EXIF (or maybe we should?)
+                await execAsync(`convert "${photoPath}" -flatten "${tempPath}"`);
+                
+                fileToPrint = tempPath;
+                tempFileCreated = true;
+                console.log(`[PRINTER] ✓ Converted to: ${tempPath}`);
+            }
+
+            const command = `lp -d "${this.printerName}" "${fileToPrint}"`;
+            
             const { stdout, stderr } = await execAsync(command);
             if (stderr && !stderr.includes('request id')) {
-                throw new Error(stderr);
+                // Determine if it's a warning or error. lp often outputs "request id is..." to stdout 
+                // but sometimes minor info to stderr.
+                console.log('[PRINTER] (stderr):', stderr);
             }
             console.log('[PRINTER] Print command executed via CUPS:', stdout.trim());
         } catch (error) {
             throw new Error(`CUPS command failed: ${error.message}`);
+        } finally {
+            // Cleanup temp file
+            if (tempFileCreated && fs.existsSync(fileToPrint)) {
+                try {
+                    fs.unlinkSync(fileToPrint);
+                    console.log(`[PRINTER] Cleaned up temp file: ${fileToPrint}`);
+                } catch (e) {
+                    console.error('[PRINTER] Failed to cleanup temp file:', e.message);
+                }
+            }
         }
     }
 

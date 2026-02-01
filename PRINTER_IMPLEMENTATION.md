@@ -939,3 +939,41 @@ printPhoto() → _printViaCUPS() (CUPS lp)
 **Phase actuelle** : Phase 3 terminée - Simplification Windows appliquée  
 **Prochaine étape** : Tests manuels du mode simulation
 
+
+---
+
+### ✅ Étape 5 : Correction "Filter Failed" et Ajout des Cadres
+**Statut** : ✅ TERMINÉ  
+**Date** : 01 février 2026
+
+**Problème détecté** :  
+Le driver Gutenprint (v5.3.5) pour la DNP QW410 plante avec l'erreur `Filter Failed` lors de l'impression de fichiers JPEG. Il fonctionne parfaitement avec des fichiers PNG.
+
+**Solutions implémentées** :
+
+1. **Conversion automatique (PrinterClient.js)** :
+   - Ajout d'une logique de pré-traitement dans `_printViaCUPS`.
+   - Si le fichier n'est pas un `.png`, il est converti à la volée via ImageMagick (`convert input.jpg -flatten output.png`).
+   - Le fichier temporaire est supprimé après impression.
+
+2. **Activation du FrameComposer (FrameComposer.js)** :
+   - Modification pour générer directement des fichiers **PNG** (au lieu de JPEG).
+   - Cela améliore la qualité (compression sans perte pour le texte/graphiques) et évite l'étape de conversion par le PrinterClient.
+   - Intégration complète via `.env` (`PRINT_FRAME_ENABLED=true`).
+
+**Architecture finale du flux d'impression** :
+- **Entrée** : Photo JPEG (Caméra)
+- **Si Cadre activé** :
+  - `FrameComposer` redimensionne et superpose le cadre PNG.
+  - Sortie : Fichier `.png` composité dans `/public/print-framed/`.
+  - Impression directe du PNG (rapide, sans conversion supplémentaire).
+- **Si Cadre désactivé** :
+  - Entrée : Fichier `.jpg`.
+  - `PrinterClient` détecte `.jpg`.
+  - Conversion temporaire (`/tmp/xxx.png`).
+  - Impression du PNG temporaire.
+
+**Avantages** :
+- Robustesse maximale (accepte n'importe quel format, imprime toujours du PNG).
+- Qualité optimale (le cadre n'est pas compressé en JPEG).
+- Performance (pas de double conversion pour les photos cadrées).
