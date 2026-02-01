@@ -78,6 +78,19 @@ export class FrameComposer {
             console.log(`[FRAME] ✓ Frame loaded successfully: ${path.basename(this.framePath)}`);
             console.log(`[FRAME] ✓ Dimensions: ${this.frameMetadata.width}x${this.frameMetadata.height}px`);
             console.log(`[FRAME] ✓ Has transparency: ${this.frameMetadata.hasAlpha ? 'Yes' : 'No'}`);
+
+            // OPTIMIZATION: Pre-resize frame to target dimensions
+            if (this.frameMetadata.width !== this.TARGET_WIDTH || 
+                this.frameMetadata.height !== this.TARGET_HEIGHT) {
+                console.log(`[FRAME]    → Pre-resizing frame to match target dimensions`);
+                this.frameBuffer = await sharp(this.frameBuffer)
+                    .resize(this.TARGET_WIDTH, this.TARGET_HEIGHT, {
+                        fit: 'fill'  // Force les dimensions exactes
+                    })
+                    .toBuffer();
+                console.log(`[FRAME] ✓ Frame pre-sized in memory`);
+            }
+
             console.log(`[FRAME] ✓ Ready to compose photos`);
 
         } catch (error) {
@@ -116,42 +129,41 @@ export class FrameComposer {
                 })
                 .toBuffer();
 
-            // Étape 2 : Préparer le cadre (redimensionner si nécessaire)
-            let frameBuffer = this.frameBuffer;
-            if (this.frameMetadata.width !== this.TARGET_WIDTH || 
-                this.frameMetadata.height !== this.TARGET_HEIGHT) {
-                console.log(`[FRAME]    → Resizing frame to match target dimensions`);
-                frameBuffer = await sharp(this.frameBuffer)
-                    .resize(this.TARGET_WIDTH, this.TARGET_HEIGHT, {
-                        fit: 'fill'  // Force les dimensions exactes
-                    })
-                    .toBuffer();
-            }
+            // Étape 2 : Pas de redimensionnement de cadre (déjà fait au chargement)
+            // On utilise directement this.frameBuffer qui est déjà optimisé
 
             // Étape 3 : Composer photo + cadre
-            const framedDir = path.join(process.cwd(), 'public', 'print-framed');
-            if (!fs.existsSync(framedDir)) {
-                fs.mkdirSync(framedDir, { recursive: true });
-                console.log('[FRAME] Created /public/print-framed/ directory');
+            // OPTIMIZATION: Write to RAM (/dev/shm) on Linux to avoid SD card slowness
+            let framedDir;
+            if (process.platform === 'linux' && fs.existsSync('/dev/shm')) {
+                framedDir = '/dev/shm';
+            } else {
+                // Fallback (Windows/Mac)
+                framedDir = path.join(process.cwd(), 'public', 'print-framed');
+                if (!fs.existsSync(framedDir)) {
+                    fs.mkdirSync(framedDir, { recursive: true });
+                }
             }
-
-            const timestamp = Date.now();
-            // Force PNG extension
-            const parsedPath = path.parse(photoName);
-            const framedName = `framed_${timestamp}_${parsedPath.name}.png`;
+            
+            // Generate unique filename (no reuse to avoid RAM pollution)
+            const photoNameNoExt = path.parse(photoName).name;
+            const framedName = `print_job_${Date.now()}_${photoNameNoExt}.png`;
             const framedPath = path.join(framedDir, framedName);
 
-            console.log(`[FRAME]    → Compositing frame overlay`);
+            console.log(`[FRAME]    → Compositing frame overlay to RAM/Disk...`);
             await sharp(resizedPhotoBuffer)
                 .composite([{
-                    input: frameBuffer,
+                    input: this.frameBuffer,
                     top: 0,
                     left: 0
                 }])
-                .png()
+                .png({
+                    compressionLevel: 0, // OPTIMIZATION: No compression = fastest CPU, instant IO on RAM
+                    force: true
+                })
                 .toFile(framedPath);
 
-            console.log(`[FRAME] ✓ Composed photo saved: /public/print-framed/${framedName}`);
+            console.log(`[FRAME] ✓ Composed photo saved: ${framedPath}`);
             console.log(`[FRAME] ✓ Ready for printing`);
             return framedPath;
 
