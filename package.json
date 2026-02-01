@@ -20,7 +20,7 @@
   "optionalDependencies": {
     "@photobot/gphoto2-camera": "^2.8.0",
     "gphoto2": "^0.3.2",
-    "node-webcam": "^0.8.1"
+    "node-webcam": "^0.8.2"
   },
   "scripts": {
     "postinstall": "node install-camera-deps.cjs",
