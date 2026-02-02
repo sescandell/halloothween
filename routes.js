@@ -408,7 +408,10 @@ export default async function(app,io) {
             
             try {
                 const photoPath = PICTURES_DIR + photoId;
-                await printerClient.printPhoto(photoPath);
+                await printerClient.printPhoto(photoPath, (status) => {
+                    // Forward progress status to client
+                    socket.emit('printStatus', { status });
+                });
                 socket.emit('printSuccess', { photoId });
             } catch (error) {
                 console.error('[PRINTER] Error:', error);

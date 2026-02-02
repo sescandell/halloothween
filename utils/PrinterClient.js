@@ -110,8 +110,11 @@ export class PrinterClient {
     /**
      * Print a photo
      * @param {string} photoPath - Absolute path to the photo file
+     * @param {function} onProgress - Optional callback for status updates (preparation, sending)
      */
-    async printPhoto(photoPath) {
+    async printPhoto(photoPath, onProgress) {
+        const notify = (status) => { if (typeof onProgress === 'function') onProgress(status); };
+
         if (!this.isAvailable()) {
             throw new Error('Printer not available');
         }
@@ -120,6 +123,8 @@ export class PrinterClient {
         if (!fs.existsSync(photoPath)) {
             throw new Error(`Photo file not found: ${photoPath}`);
         }
+
+        notify('preparation');
 
         // STEP 1: Compose with frame if enabled
         let finalPhotoPath = photoPath;
@@ -136,6 +141,8 @@ export class PrinterClient {
         }
 
         console.log(`[PRINTER] Printing: ${path.basename(finalPhotoPath)} to "${this.printerName}"`);
+        
+        notify('sending');
 
         // STEP 2: Simulation mode - save a copy to /print folder
         if (this.simulationMode) {

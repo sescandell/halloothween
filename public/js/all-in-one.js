@@ -283,17 +283,27 @@
         socket.emit('printPhoto', { photoId: currentPhotoId });
         
         // Visual feedback
-        $printBtn.prop('disabled', true).text('⏳ Impression en cours...');
+        $printBtn.prop('disabled', true).text('⏳ Connexion...');
+    });
+
+    // Print status handler (intermediate steps)
+    socket.on('printStatus', function(data) {
+        console.log('[PRINT] Status:', data.status);
+        if (data.status === 'preparation') {
+            $printBtn.text('🔧 Préparation...');
+        } else if (data.status === 'sending') {
+            $printBtn.text('📡 Envoi...');
+        }
     });
 
     // Print success handler
     socket.on('printSuccess', function(data) {
         console.log('[PRINT] Success:', data);
-        $printBtn.prop('disabled', false).text('✓ Imprimé !');
+        $printBtn.prop('disabled', true).text('🖨️ Impression en cours...'); // Keep disabled
         
         // Reset button text after 3 seconds
         setTimeout(function() {
-            $printBtn.text('🖨️ Imprimer la photo');
+            $printBtn.prop('disabled', false).text('🖨️ Imprimer la photo');
         }, 3000);
     });
 
