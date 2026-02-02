@@ -1,6 +1,6 @@
-# Halloothween Photobooth
+# Photobooth
 
-A modern photobooth application designed for events and parties. Capture, process, and print photos with real-time preview, cloud streaming support, and customizable print overlays.
+A photobooth application designed for events and parties. Capture, process, and print photos with real-time preview, cloud streaming support, and customizable print overlays.
 
 ## Features
 
@@ -11,7 +11,6 @@ A modern photobooth application designed for events and parties. Capture, proces
 - **Print Frame Overlay**: Add customizable PNG borders/frames to printed photos
 - **Cloud Streaming**: Optional Azure integration for remote photo access
 - **Multi-interface**: Controller, displayer, and manager views for flexible setups
-- **Zero Security Vulnerabilities**: Modern dependencies with regular updates
 
 ## Requirements
 
@@ -40,11 +39,13 @@ npm --version
 #### For Raspberry Pi (DSLR cameras with gphoto2)
 
 ```bash
+sudo apt-get update
+
 # Install gphoto2 runtime libraries (required)
 sudo apt install libgphoto2-6 libgphoto2-port12
 
 # Install development libraries (for legacy driver compilation if needed)
-sudo apt install libgphoto2-dev
+# sudo apt install libgphoto2-dev
 
 # Verify gphoto2 is working
 gphoto2 --version
@@ -54,14 +55,42 @@ gphoto2 --auto-detect
 #### For Raspberry Pi (CUPS printing)
 
 ```bash
-# Install CUPS for DNP QW410 printer
-sudo apt install cups
+# Install CUPS for DNP QW410 printer and Gutenprint
+sudo apt-get install cups printer-driver-gutenprint
+
+# Check the Gutenprint version, DNP QW410 requires Gutenprint 5.3.4+
+# If needed, compile and install Gutenprint by yourself:
+# sudo apt-get install build-essential libcups2-dev libusb-1.0-0-dev cups-common libcupsimage2-dev
+# cd ~
+# wget https://sourceforge.net/projects/gimp-print/files/gutenprint-5.3/5.3.5/gutenprint-5.3.5.tar.xz
+# tar -xvf gutenprint-5.3.5.tar.xz
+# cd gutenprint-5.3.5
+# ./configure
+# make
+# sudo make install
+# sudo ldconfig -v | grep gutenprint
+
 
 # Add user to lpadmin group
-sudo usermod -a -G lpadmin pi
+sudo usermod -a -G lpadmin $USER
+
+# Allow remote access to CUPs Web Interface
+sudo cupsctl --remote-admin
+
+# Install Gutenprint
 
 # Configure printer via CUPS web interface
-# http://localhost:631
+# http://<IP_RPI>:631
+# Admin > Add Printer (user/pwd == those of the RPI)
+# Select Gutenprint drivers
+
+# Configure CUPs on RPI (without UI)
+# sudo vim /etc/environment
+# Add the following line:
+# HP_COLOR_MGMNT_DISABLE=1
+
+# Test impression: 
+# lp -d <YOUR-PRINTER-NAME-IN-CUPS> /path/to/a/file.png
 ```
 
 #### For Windows Development
@@ -108,7 +137,7 @@ Edit `.env` with your settings:
 # CAMERA CONFIGURATION
 # ============================================
 
-# Camera driver: auto, gphoto2, gphoto2-legacy, webcam
+# Camera driver: auto, gphoto2, webcam
 CAMERA_DRIVER=auto
 
 # Capture mode
@@ -124,11 +153,8 @@ PAUSE_STREAM_ON_CAPTURE=true
 PRINTER_ENABLED=true
 
 # Printer name (Linux/RPI only - Windows always uses SIMULATION)
-# Options: "DNP_QW410" or "__SIMULATION__"
-PRINTER_NAME=DNP_QW410
-
-# Print mode
-PRINTER_MODE=auto
+# Options: "<PRINTER-NAME>" or "__SIMULATION__"
+PRINTER_NAME=DNP-QW410
 
 # ============================================
 # PRINT FRAME OVERLAY
@@ -204,7 +230,6 @@ The application supports multiple camera drivers with automatic fallback:
 |--------|-------------|----------|----------|
 | `auto` | Automatic detection with fallback | All | Most users (recommended) |
 | `gphoto2` | Modern FFI-based driver | Linux/RPI | DSLR cameras (best performance) |
-| `gphoto2-legacy` | Legacy native driver | Linux/RPI | Fallback if modern driver fails |
 | `webcam` | System webcam driver | All | Windows dev or webcam setups |
 
 ### Auto-Detection Behavior
@@ -231,11 +256,11 @@ CAMERA_DRIVER=webcam  # Force webcam driver
 
 ### Overview
 
-The application supports printing to DNP QW410 dye-sublimation printers via CUPS on Linux/Raspberry Pi. Windows automatically uses SIMULATION mode.
+The application supports printing via CUPS on Linux/Raspberry Pi. Windows automatically uses SIMULATION mode.
 
 | Platform | Print Method | Output |
 |----------|--------------|--------|
-| **Linux/RPI** | CUPS (lp command) | Real printer (DNP_QW410) or simulation |
+| **Linux/RPI** | CUPS (lp command) | Real printer or simulation |
 | **Windows** | SIMULATION | Saves to `public/print/` folder |
 
 ### Print Specifications
@@ -246,12 +271,12 @@ The application supports printing to DNP QW410 dye-sublimation printers via CUPS
 
 ### Printer Setup (Linux/RPI)
 
-1. Install CUPS and configure DNP QW410 printer
+1. Install CUPS and configure your printer
 2. Verify printer is available:
    ```bash
    lpstat -p -d
    ```
-3. Set `PRINTER_ENABLED=true` and `PRINTER_NAME=DNP_QW410` in `.env`
+3. Set `PRINTER_ENABLED=true` and `PRINTER_NAME=DNP-QW410` in `.env`
 
 ### Simulation Mode
 
@@ -470,7 +495,7 @@ CAMERA_DRIVER=webcam
 lpstat -p -d
 
 # Verify printer name matches .env
-lpstat -p DNP_QW410
+lpstat -p PRINTER-NAME
 ```
 
 **Windows printing:**
@@ -503,10 +528,6 @@ ls -lh public/print-framed/
 
 ### General Issues
 
-**Error: "Cannot use import statement outside a module"**
-
-Make sure you're using Node.js >= 18.0.0 and `package.json` has `"type": "module"`.
-
 **Error: "gphoto2 module not found" on Windows**
 
 This is normal. On Windows, the application automatically falls back to webcam mode.
@@ -522,10 +543,6 @@ Ensure directories exist and are writable.
 
 ## Additional Documentation
 
-- **[CHANGELOG.md](CHANGELOG.md)**: Version history and breaking changes
-- **[CAMERA_SETUP.md](CAMERA_SETUP.md)**: Camera configuration and troubleshooting
-- **[PRINTER_IMPLEMENTATION.md](PRINTER_IMPLEMENTATION.md)**: Printer setup and technical details
-- **[QR_OPTIMIZATION.md](QR_OPTIMIZATION.md)**: QR code generation optimization
 - **[assets/print-frames/README.md](assets/print-frames/README.md)**: Frame creation guide
 
 ## Contributing
