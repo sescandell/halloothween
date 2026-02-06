@@ -306,7 +306,7 @@
         // Reset button text after 3 seconds
         setTimeout(function() {
             $printBtn.prop('disabled', false).text('🖨️ Imprimer');
-        }, 3000);
+        }, 10000);
     });
 
     // Print error handler
