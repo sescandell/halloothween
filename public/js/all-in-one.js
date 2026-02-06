@@ -303,10 +303,10 @@
         console.log('[PRINT] Success:', data);
         $printBtn.prop('disabled', true).text('🖨️ Impression en cours...'); // Keep disabled
         
-        // Reset button text after 3 seconds
+        // Reset button text after 15 seconds
         setTimeout(function() {
             $printBtn.prop('disabled', false).text('🖨️ Imprimer');
-        }, 10000);
+        }, 15000);
     });
 
     // Print error handler
