@@ -272,7 +272,9 @@
     });
 
     // Print button handler
-    $printBtn.on('click', function() {
+    $printBtn.on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         if (!currentPhotoId) {
             console.error('[PRINT] No photo ID available');
             alert('Aucune photo à imprimer');
@@ -303,7 +305,7 @@
         
         // Reset button text after 3 seconds
         setTimeout(function() {
-            $printBtn.prop('disabled', false).text('🖨️ Imprimer la photo');
+            $printBtn.prop('disabled', false).text('🖨️ Imprimer');
         }, 3000);
     });
 
@@ -311,7 +313,7 @@
     socket.on('printError', function(data) {
         console.error('[PRINT] Error:', data);
         alert('Erreur d\'impression : ' + data.message);
-        $printBtn.prop('disabled', false).text('🖨️ Imprimer la photo');
+        $printBtn.prop('disabled', false).text('🖨️ Imprimer');
     });
 
     $photos.on('click', 'img', function () {
