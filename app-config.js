@@ -10,7 +10,7 @@ import { getCameraConfig } from './utils/camera-config.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-export default {
+const appConfig = {
     // ID unique de ce RPI (peut être généré automatiquement)
     rpiId: process.env.RPI_ID || 'rpi-001',
     
@@ -53,3 +53,16 @@ export default {
         framePath: process.env.PRINT_FRAME_PATH || null
     }
 };
+
+/**
+ * Met à jour la configuration au runtime (sans persistance)
+ * @param {object} partial - Objet partiel avec les champs à modifier
+ */
+export function updateConfig(partial) {
+    if (partial.streamer) Object.assign(appConfig.streamer, partial.streamer);
+    if (partial.printer) Object.assign(appConfig.printer, partial.printer);
+    if (partial.printFrame) Object.assign(appConfig.printFrame, partial.printFrame);
+    return appConfig;
+}
+
+export default appConfig;

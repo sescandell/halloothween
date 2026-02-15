@@ -1,0 +1,96 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Admin - Photobooth</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body class="page-admin">
+    <div class="admin-container">
+        <h1>Administration Photobooth</h1>
+
+        <!-- RPI Identity -->
+        <section class="admin-section">
+            <h2>📍 Identité</h2>
+            <div class="admin-field">
+                <label>RPI ID</label>
+                <input type="text" id="rpiId" readonly />
+            </div>
+        </section>
+
+        <!-- Streamer -->
+        <section class="admin-section">
+            <h2>📡 Streamer</h2>
+            <div class="admin-field admin-toggle">
+                <label>
+                    <input type="checkbox" id="streamerEnabled" />
+                    Activé
+                </label>
+                <span id="streamerStatus" class="status-badge"></span>
+            </div>
+            <div class="admin-field">
+                <label for="streamerUrl">URL</label>
+                <input type="url" id="streamerUrl" placeholder="https://..." />
+            </div>
+        </section>
+
+        <!-- Printer -->
+        <section class="admin-section">
+            <h2>🖨️ Imprimante</h2>
+            <div class="admin-field admin-toggle">
+                <label>
+                    <input type="checkbox" id="printerEnabled" />
+                    Activée
+                </label>
+                <span id="printerStatus" class="status-badge"></span>
+            </div>
+            <div class="admin-field">
+                <label for="printerName">Nom</label>
+                <input type="text" id="printerName" placeholder="DNP QW410" />
+            </div>
+        </section>
+
+        <!-- Print Frame -->
+        <section class="admin-section">
+            <h2>🖼️ Cadre d'impression</h2>
+            <div class="admin-field admin-toggle">
+                <label>
+                    <input type="checkbox" id="frameEnabled" />
+                    Activé
+                </label>
+                <span id="frameStatus" class="status-badge"></span>
+            </div>
+            <div class="admin-field">
+                <label for="framePath">Chemin du cadre</label>
+                <input type="text" id="framePath" placeholder="assets/print-frames/frame.png" />
+            </div>
+            <div class="admin-actions-inline">
+                <button id="reloadFrame" class="btn btn-secondary">🔄 Recharger le cadre</button>
+            </div>
+            <div id="framePreview" class="frame-preview">
+                <p class="frame-preview-placeholder">Aucun cadre configuré</p>
+            </div>
+        </section>
+
+        <!-- Save Button -->
+        <div class="admin-save">
+            <button id="saveConfig" class="btn btn-primary">💾 Enregistrer les modifications</button>
+            <span id="saveStatus" class="save-status"></span>
+        </div>
+
+        <!-- Actions -->
+        <section class="admin-section">
+            <h2>📦 Actions</h2>
+            <div class="admin-actions">
+                <button id="packagePictures" class="btn btn-action">📦 Packager les photos</button>
+                <button id="cleanPictures" class="btn btn-danger">🗑️ Nettoyer les photos</button>
+            </div>
+            <div id="actionStatus" class="action-status"></div>
+        </section>
+    </div>
+
+    <script src="/js/admin.js"></script>
+</body>
+</html>

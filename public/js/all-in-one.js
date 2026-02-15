@@ -100,12 +100,13 @@
             console.log('[CONFIG] Pause stream mode DISABLED (direct capture)');
         }
         
-        // Show print button if printer enabled
+        // Show/hide print button based on printer status
         if (config.printerEnabled) {
             console.log('[CONFIG] Printer ENABLED');
             $printBtn.show();
         } else {
             console.log('[CONFIG] Printer DISABLED');
+            $printBtn.hide();
         }
     });
 
@@ -265,6 +266,11 @@
                     .data('path', path)
             )
             .prependTo($photos);
+    });
+
+    socket.on('gallery-reset', function () {
+        console.log('[GALLERY] Reset received, clearing photos');
+        $photos.empty();
     });
 
     socket.on('cry', function () {

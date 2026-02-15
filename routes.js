@@ -1,15 +1,19 @@
 import { InMemoryStore } from './utils/InMemoryStore.js';
 import { StreamingClient } from './utils/StreamingClient.js';
 import { PrinterClient } from './utils/PrinterClient.js';
-import appConfig from './app-config.js';
+import appConfig, { updateConfig } from './app-config.js';
 import { createCameraAdapter } from './utils/CameraAdapter.js';
 import fs from 'fs';
+import path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import { smartSharp } from './utils/bmpToSharp.js';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+
+const execAsync = promisify(exec);
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 const PICTURES_DIR = __dirname + '/public/pictures/';
 
@@ -143,6 +147,43 @@ async function initCamera() {
     }
 }
 
+// Helper: build config payload for frontend clients
+function buildClientConfig() {
+    const cfg = {
+        rpiId: appConfig.rpiId,
+        pauseStreamMode: appConfig.camera.pauseStreamOnCapture
+    };
+    if (streamingClient && appConfig.streamer.enabled) {
+        cfg.streamerUrl = appConfig.streamer.url;
+    }
+    cfg.printerEnabled = appConfig.printer.enabled && printerClient && printerClient.isAvailable();
+    return cfg;
+}
+
+// Helper: build full config for admin page
+function getAdminConfig() {
+    return {
+        rpiId: appConfig.rpiId,
+        streamer: {
+            enabled: appConfig.streamer.enabled,
+            url: appConfig.streamer.url,
+            sharedSecret: appConfig.streamer.sharedSecret,
+            connected: streamingClient ? streamingClient.isConnected() : false
+        },
+        printer: {
+            enabled: appConfig.printer.enabled,
+            name: appConfig.printer.name,
+            mode: appConfig.printer.mode,
+            available: printerClient ? printerClient.isAvailable() : false
+        },
+        printFrame: {
+            enabled: appConfig.printFrame.enabled,
+            framePath: appConfig.printFrame.framePath || '',
+            available: printerClient && printerClient.frameComposer ? printerClient.frameComposer.isAvailable() : false
+        }
+    };
+}
+
 export default async function(app,io) {    
     await initCamera();
     
@@ -181,6 +222,172 @@ export default async function(app,io) {
     app.get('/loadPictures', function(req, res) {
         res.json(picturesStore.items);
     });
+
+    // ==========================================
+    // ADMIN ROUTES
+    // ==========================================
+
+    app.get('/admin', function(req, res) {
+        res.render('admin');
+    });
+
+    app.get('/api/admin/config', function(req, res) {
+        res.json(getAdminConfig());
+    });
+
+    app.post('/api/admin/config', async function(req, res) {
+        const changes = req.body;
+
+        const streamerChanged = changes.streamer !== undefined;
+        const printerChanged = changes.printer !== undefined;
+        const frameChanged = changes.printFrame !== undefined;
+
+        // Apply changes
+        updateConfig(changes);
+
+        // Reinit streamer if needed
+        if (streamerChanged) {
+            if (streamingClient) {
+                streamingClient.disconnect();
+                streamingClient = null;
+            }
+            if (appConfig.streamer.enabled) {
+                streamingClient = new StreamingClient({
+                    streamerUrl: appConfig.streamer.url,
+                    sharedSecret: appConfig.streamer.sharedSecret,
+                    rpiId: appConfig.rpiId,
+                    picturesDir: PICTURES_DIR
+                });
+                streamingClient.connect();
+                console.log('[ADMIN] Streamer reinitialized');
+            } else {
+                console.log('[ADMIN] Streamer disabled');
+            }
+        }
+
+        // Reinit printer/frame if needed
+        if (printerChanged || frameChanged) {
+            printerClient = null;
+            if (appConfig.printer.enabled) {
+                printerClient = new PrinterClient({
+                    enabled: appConfig.printer.enabled,
+                    name: appConfig.printer.name,
+                    mode: appConfig.printer.mode,
+                    frameConfig: appConfig.printFrame
+                });
+                await printerClient.initialize();
+                console.log('[ADMIN] Printer reinitialized');
+            } else {
+                console.log('[ADMIN] Printer disabled');
+            }
+        }
+
+        // Broadcast updated config to all connected frontend clients
+        io.of('/socket').emit('app-config', buildClientConfig());
+
+        console.log('[ADMIN] Configuration updated');
+        res.json({ success: true, config: getAdminConfig() });
+    });
+
+    app.post('/api/admin/package-pictures', async function(req, res) {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const archiveName = `pictures_${appConfig.rpiId}_${timestamp}.tar.gz`;
+        const archivePath = path.join(__dirname, archiveName);
+
+        // Check there are pictures to package
+        const files = fs.readdirSync(PICTURES_DIR).filter(f => !f.startsWith('.'));
+        if (files.length === 0) {
+            return res.status(400).json({ error: 'Aucune photo à packager' });
+        }
+
+        try {
+            await execAsync(`tar -czf "${archivePath}" -C "${PICTURES_DIR}" .`);
+
+            res.set('Content-Type', 'application/gzip');
+            res.set('Content-Disposition', `attachment; filename="${archiveName}"`);
+
+            const stream = fs.createReadStream(archivePath);
+            stream.pipe(res);
+            stream.on('close', () => {
+                try { fs.unlinkSync(archivePath); } catch(e) {}
+            });
+        } catch (error) {
+            console.error('[ADMIN] Package error:', error);
+            try { fs.unlinkSync(archivePath); } catch(e) {}
+            res.status(500).json({ error: 'Échec de la création de l\'archive: ' + error.message });
+        }
+    });
+
+    app.post('/api/admin/clean-pictures', async function(req, res) {
+        const dirsToClean = [
+            path.join(__dirname, 'public', 'pictures'),
+            path.join(__dirname, 'public', 'display'),
+            path.join(__dirname, 'public', 'thumbnails'),
+            path.join(__dirname, 'public', 'print'),
+            path.join(__dirname, 'public', 'print-framed')
+        ];
+
+        let totalDeleted = 0;
+
+        for (const dir of dirsToClean) {
+            if (!fs.existsSync(dir)) continue;
+
+            const files = fs.readdirSync(dir);
+            for (const file of files) {
+                // Keep dotfiles (.keep, .gitkeep) and README
+                if (file.startsWith('.') || file === 'README.md') continue;
+                try {
+                    fs.unlinkSync(path.join(dir, file));
+                    totalDeleted++;
+                } catch (e) {
+                    console.error(`[ADMIN] Failed to delete ${file}:`, e.message);
+                }
+            }
+        }
+
+        // Reset in-memory store
+        picturesStore.reset();
+
+        // Notify all connected clients to reset their gallery
+        io.of('/socket').emit('gallery-reset');
+
+        console.log(`[ADMIN] Cleaned ${totalDeleted} files from ${dirsToClean.length} directories`);
+        res.json({ success: true, deleted: totalDeleted });
+    });
+
+    app.post('/api/admin/reload-frame', async function(req, res) {
+        try {
+            if (!printerClient) {
+                return res.status(400).json({ error: 'Imprimante non initialisée (activez l\'imprimante d\'abord)' });
+            }
+            if (!printerClient.frameComposer) {
+                return res.status(400).json({ error: 'Cadre non configuré (activez le cadre dans la configuration)' });
+            }
+            await printerClient.frameComposer.initialize();
+            res.json({
+                success: true,
+                available: printerClient.frameComposer.isAvailable()
+            });
+        } catch (error) {
+            console.error('[ADMIN] Reload frame error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app.get('/api/admin/frame-preview', function(req, res) {
+        if (!appConfig.printFrame.framePath) {
+            return res.status(404).json({ error: 'Aucun cadre configuré' });
+        }
+        const absolutePath = path.resolve(process.cwd(), appConfig.printFrame.framePath);
+        if (!fs.existsSync(absolutePath)) {
+            return res.status(404).json({ error: 'Fichier cadre introuvable: ' + appConfig.printFrame.framePath });
+        }
+        res.sendFile(absolutePath);
+    });
+
+    // ==========================================
+    // END ADMIN ROUTES
+    // ==========================================
 
     fs.readdir(PICTURES_DIR, function(err, files){
         if (err) {
@@ -427,17 +634,6 @@ export default async function(app,io) {
         socket.emit('connected');
         
         // Send configuration to frontend
-        const appConfigForClient = {
-            rpiId: appConfig.rpiId,
-            pauseStreamMode: PAUSE_STREAM_MODE
-        };
-
-        if (streamingClient && appConfig.streamer.enabled) {
-            appConfigForClient.streamerUrl = appConfig.streamer.url;
-        }
-        
-        appConfigForClient.printerEnabled = appConfig.printer.enabled && printerClient && printerClient.isAvailable();
-        
-        socket.emit('app-config', appConfigForClient);
+        socket.emit('app-config', buildClientConfig());
     });
 };

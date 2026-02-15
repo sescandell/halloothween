@@ -17,6 +17,9 @@ export default function(app, io) {
     // Tell express where it can find the templates
     app.set('views', __dirname + '/views');
 
+    // Parse JSON request bodies (needed for admin API)
+    app.use(express.json());
+
     // Make the files in the public folder available to the world
     app.use(express.static(__dirname + '/public'));
 }

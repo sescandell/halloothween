@@ -18,6 +18,11 @@ export class InMemoryStore {
         return this.size;
     }
 
+    reset() {
+        this.items = [];
+        this.size = 0;
+    }
+
     get(pos) {
         return this.items[pos];
     }
