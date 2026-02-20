@@ -307,11 +307,11 @@
     // Print success handler
     socket.on('printSuccess', function(data) {
         console.log('[PRINT] Success:', data);
-        $printBtn.prop('disabled', true).text('🖨️ Impression en cours...'); // Keep disabled
+        $printBtn.prop('disabled', true).text('📜 Impression en cours...'); // Keep disabled
         
         // Reset button text after 15 seconds
         setTimeout(function() {
-            $printBtn.prop('disabled', false).text('🖨️ Imprimer');
+            $printBtn.prop('disabled', false).text('📜 Imprimer');
         }, 15000);
     });
 
@@ -319,7 +319,7 @@
     socket.on('printError', function(data) {
         console.error('[PRINT] Error:', data);
         alert('Erreur d\'impression : ' + data.message);
-        $printBtn.prop('disabled', false).text('🖨️ Imprimer');
+        $printBtn.prop('disabled', false).text('📜 Imprimer');
     });
 
     $photos.on('click', 'img', function () {

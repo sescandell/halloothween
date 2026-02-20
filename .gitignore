@@ -25,3 +25,4 @@ public/print-framed/*
 !public/print-framed/.gitkeep
 !public/print-framed/README.md
 .env
+.azure
