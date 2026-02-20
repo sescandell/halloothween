@@ -34,7 +34,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-12-01' = {
   }
 }
 
-// App Service (Linux with Node.js 23)
+// App Service (Linux with Node.js 24)
 resource appService 'Microsoft.Web/sites@2023-12-01' = {
   name: 'az-${resourcePrefix}-app-${resourceToken}'
   location: location
@@ -42,7 +42,7 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
   properties: {
     serverFarmId: appServicePlan.id
     siteConfig: {
-      linuxFxVersion: 'NODE|22-lts'  // Latest Node.js 22 LTS
+      linuxFxVersion: 'NODE|24-lts'  // Latest Node.js 24 LTS
       cors: {
         allowedOrigins: ['*']
         supportCredentials: false
@@ -54,7 +54,11 @@ resource appService 'Microsoft.Web/sites@2023-12-01' = {
         }
         {
           name: 'WEBSITE_NODE_DEFAULT_VERSION'
-          value: '22.0.0'
+          value: '24.0.0'
+        }
+        {
+          name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
+          value: 'true'
         }
       ]
     }
